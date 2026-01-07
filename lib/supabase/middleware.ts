@@ -70,9 +70,25 @@ export async function updateSession(request: NextRequest) {
     !user &&
     !request.nextUrl.pathname.startsWith("/login") &&
     !request.nextUrl.pathname.startsWith("/register") &&
-    !request.nextUrl.pathname.startsWith("/auth/callback")
+    !request.nextUrl.pathname.startsWith("/auth/callback") &&
+    !request.nextUrl.pathname.startsWith("/api/auth-recruiter/login") &&
+    !request.nextUrl.pathname.startsWith("/api/auth-recruiter/register") &&
+    !request.nextUrl.pathname.startsWith("/api/auth-candidate/login") &&
+    !request.nextUrl.pathname.startsWith("/api/auth-candidate/register")
   ) {
-    // no user, potentially respond by redirecting the user to the login page
+    // Jika permintaan datang dari API, kembalikan JSON error
+    if (request.nextUrl.pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Unauthorized: Silakan login terlebih dahulu",
+          error: { auth: ["Session not found"] },
+        },
+        { status: 401 }
+      );
+    }
+
+    // Jika bukan API, lakukan redirect ke halaman login
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
