@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import axios from "axios";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,59 +44,38 @@ function LoginForm() {
     setLoading(true);
 
     try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({
+      const response = await axios.post("/api/auth/login", {
         email,
         password,
       });
 
-      if (error) {
-        setError(error.message);
-      } else {
-        router.push("/");
+      if (response.status === 200) {
         router.refresh();
+        router.push("/dashboard");
       }
-    } catch {
-      setError("Terjadi kesalahan saat login");
+    } catch (err) {
+      console.error("Login error:", err);
+      if (axios.isAxiosError(err)) {
+        const errorMessage =
+          err.response?.data?.error || "Terjadi kesalahan saat login";
+        setError(errorMessage);
+      } else {
+        setError("Terjadi kesalahan koneksi saat login");
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setError(null);
-    setLoading(true);
-
-    try {
-      const supabase = createClient();
-      const siteUrl =
-        process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${siteUrl}/auth/callback`,
-        },
-      });
-      if (error) {
-        setError(error.message);
-        setLoading(false);
-      } else if (data?.url) {
-        // Redirect ke Google OAuth
-        window.location.href = data.url;
-      }
-    } catch {
-      setError("Terjadi kesalahan saat login dengan Google");
-      setLoading(false);
-    }
+  const handleGoogleLogin = () => {
+    window.location.href = "/api/auth/google";
   };
 
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle>Login</CardTitle>
-        <CardDescription>
-          Masuk ke akun Anda untuk melanjutkan
-        </CardDescription>
+        <CardDescription>Masuk ke akun Anda untuk melanjutkan</CardDescription>
       </CardHeader>
       <form onSubmit={handleLogin}>
         <CardContent className="space-y-4">

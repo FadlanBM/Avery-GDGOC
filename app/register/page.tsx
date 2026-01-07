@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import axios from "axios";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,53 +42,34 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signUp({
+      const response = await axios.post("/api/auth/register", {
         email,
         password,
-        options: {
-          emailRedirectTo: `${location.origin}/auth/callback`,
-        },
+        origin: window.location.origin,
       });
 
-      if (error) {
-        setError(error.message);
-      } else {
+      console.log(response);
+
+      if (response.status === 200) {
         router.push(
           "/login?message=Silakan cek email Anda untuk verifikasi akun"
         );
       }
-    } catch {
-      setError("Terjadi kesalahan saat mendaftar");
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(
+          err.response?.data?.error || "Terjadi kesalahan saat mendaftar"
+        );
+      } else {
+        setError("Terjadi kesalahan koneksi saat mendaftar");
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setError(null);
-    setLoading(true);
-
-    try {
-      const supabase = createClient();
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-
-      if (error) {
-        setError(error.message);
-        setLoading(false);
-      } else if (data?.url) {
-        // Redirect ke Google OAuth
-        window.location.href = data.url;
-      }
-    } catch {
-      setError("Terjadi kesalahan saat login dengan Google");
-      setLoading(false);
-    }
+  const handleGoogleLogin = () => {
+    window.location.href = "/api/auth/google";
   };
 
   return (

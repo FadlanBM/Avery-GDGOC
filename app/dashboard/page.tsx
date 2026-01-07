@@ -1,5 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic";
+
 import {
   Card,
   CardContent,
@@ -28,7 +31,9 @@ export default async function DashboardPage() {
           <div className="container flex h-14 items-center justify-between px-4">
             <h1 className="text-lg font-semibold">Dashboard</h1>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">{user.email}</span>
+              <span className="text-sm text-muted-foreground">
+                {user.email}
+              </span>
               <LogoutButton />
             </div>
           </div>
@@ -150,7 +155,9 @@ export default async function DashboardPage() {
                 <CardContent>
                   <div className="text-2xl font-bold">
                     {user.last_sign_in_at
-                      ? new Date(user.last_sign_in_at).toLocaleDateString("id-ID")
+                      ? new Date(user.last_sign_in_at).toLocaleDateString(
+                          "id-ID"
+                        )
                       : "Hari ini"}
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -169,7 +176,9 @@ export default async function DashboardPage() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <p className="text-sm font-medium">Email</p>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {user.email}
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <p className="text-sm font-medium">User ID</p>
@@ -221,5 +230,3 @@ export default async function DashboardPage() {
     </div>
   );
 }
-
-
