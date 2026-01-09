@@ -44,13 +44,25 @@ export async function POST(request: Request) {
     }
 
     const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("is_active")
+      .from("candidate")
+      .select("email, phone, gender, birth_date, address, is_active")
       .eq("id", data.user.id)
       .maybeSingle();
 
+    if (!profile) {
+      await supabase.auth.signOut();
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Data profil belum tersedia. Silakan lengkapi profil Anda.",
+          error: { auth: ["Profile data not found"] },
+        },
+        { status: 403 }
+      );
+    }
+
     // Validasi jika akun tidak aktif
-    if (profile && profile.is_active === false) {
+    if (profile.is_active === false) {
       await supabase.auth.signOut();
 
       return NextResponse.json(

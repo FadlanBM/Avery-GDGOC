@@ -82,9 +82,8 @@ export async function POST(request: Request) {
     }
 
     // Gunakan upsert untuk menghindari error jika trigger database sudah membuat profile duluan
-    const { error: insertError } = await supabase.from("profiles").upsert({
+    const { error: insertError } = await supabase.from("candidate").upsert({
       id: data.user.id,
-      role: "recruiter",
     });
 
     if (insertError) {
