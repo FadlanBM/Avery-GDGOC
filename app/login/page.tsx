@@ -98,7 +98,7 @@ function LoginForm() {
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleLogin}>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-2">
           {message && (
             <div className="rounded-md bg-green-500/15 p-3 text-sm text-green-600 dark:text-green-400">
               {message}
@@ -134,7 +134,7 @@ function LoginForm() {
             />
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
+        <CardFooter className="flex flex-col space-y-3">
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Memproses..." : "Login"}
           </Button>
@@ -150,8 +150,7 @@ function LoginForm() {
 
           <Button
             type="button"
-            variant="outline"
-            className="w-full"
+            className="w-full bg-white border border-primary text-primary hover:bg-gray-100"
             onClick={handleGoogleLogin}
             disabled={loading}
           >
@@ -176,7 +175,7 @@ function LoginForm() {
           <div className="text-center text-sm">
             Belum punya akun?{" "}
             <Link href="/register" className="text-primary underline">
-              Daftar di sini
+              Register di sini
             </Link>
           </div>
         </CardFooter>

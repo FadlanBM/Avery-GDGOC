@@ -94,11 +94,11 @@ export default function RegisterPage() {
     <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Daftar</CardTitle>
+          <CardTitle>Register</CardTitle>
           <CardDescription>Buat akun baru untuk memulai</CardDescription>
         </CardHeader>
         <form onSubmit={handleRegister}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-2">
             {error && (
               <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
                 {error}
@@ -141,9 +141,9 @@ export default function RegisterPage() {
               />
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
+          <CardFooter className="flex flex-col space-y-3">
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Memproses..." : "Daftar"}
+              {loading ? "Memproses..." : "Register"}
             </Button>
 
             <div className="relative">
@@ -157,8 +157,7 @@ export default function RegisterPage() {
 
             <Button
               type="button"
-              variant="outline"
-              className="w-full"
+              className="w-full bg-white border border-primary text-primary hover:bg-gray-100"
               onClick={handleGoogleLogin}
               disabled={loading}
             >
@@ -177,7 +176,7 @@ export default function RegisterPage() {
                   d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"
                 ></path>
               </svg>
-              Daftar dengan Google
+              Login dengan Google
             </Button>
 
             <div className="text-center text-sm">
