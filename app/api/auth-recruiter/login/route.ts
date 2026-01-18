@@ -21,7 +21,7 @@ export async function POST(request: Request) {
           message: firstErrorMessage,
           error: flattenedErrors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
           message: error.message,
           error: { auth: [error.message] },
         },
-        { status: error.status || 401 }
+        { status: error.status || 401 },
       );
     }
 
@@ -49,6 +49,18 @@ export async function POST(request: Request) {
       .eq("user_id", data.user.id)
       .maybeSingle();
 
+    if (profileError) {
+      console.error("Profile fetch error:", profileError.message);
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Gagal mengambil data profil",
+          error: { database: [profileError.message] },
+        },
+        { status: 400 },
+      );
+    }
+
     if (!profile?.user_id) {
       return NextResponse.json(
         {
@@ -57,7 +69,7 @@ export async function POST(request: Request) {
           error: { auth: ["Profile data not found"] },
           data,
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -70,7 +82,7 @@ export async function POST(request: Request) {
           message: "Akun Anda dinonaktifkan. Silakan hubungi admin.",
           error: { auth: ["Account is inactive"] },
         },
-        { status: 403 } // Forbidden
+        { status: 403 }, // Forbidden
       );
     }
 
@@ -91,7 +103,7 @@ export async function POST(request: Request) {
         message: "Internal Server Error",
         error: { server: [errorMessage] },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

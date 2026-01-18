@@ -23,7 +23,7 @@ export async function POST(request: Request) {
           message: firstErrorMessage,
           error: flattenedErrors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
           message: "Email sudah terdaftar",
           error: { email: ["Email already registered"] },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
           message: error.message,
           error: { auth: [error.message] },
         },
-        { status: error.status || 400 }
+        { status: error.status || 400 },
       );
     }
 
@@ -77,17 +77,45 @@ export async function POST(request: Request) {
           message: "Gagal membuat user",
           error: { auth: ["User object not returned"] },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    // Gunakan upsert untuk menghindari error jika trigger database sudah membuat profile duluan
-    const { error: insertError } = await supabase.from("candidate").upsert({
-      id: data.user.id,
+    const { data: roleData, error: roleError } = await supabase
+      .from("roles")
+      .select("id, name")
+      .eq("name", "registrant")
+      .single();
+
+    if (roleError || !roleData) {
+      console.error(`Error fetching role recruiter:`, roleError);
+      return NextResponse.json(
+        { error: `Role registrant not found` },
+        { status: 500 },
+      );
+    }
+
+    const { error: insertError } = await supabase.from("user_roles").insert({
+      user_id: data.user?.id,
+      role_id: roleData.id,
     });
 
     if (insertError) {
-      console.error("Error inserting user role:", insertError.message);
+      if (insertError.code === "23505") {
+        return NextResponse.json(
+          {
+            status: false,
+            message: "Role sudah terdaftar",
+            error: { role: ["Role already registered"] },
+          },
+          { status: 400 },
+        );
+      }
+      console.error(`Error assigning role recruiter:`, insertError);
+      return NextResponse.json(
+        { error: `Failed to assign role recruiter` },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({
@@ -108,7 +136,7 @@ export async function POST(request: Request) {
         message: "Internal Server Error",
         error: { server: [errorMessage] },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -25,7 +25,7 @@ export async function POST(request: Request) {
           message: firstErrorMessage,
           error: flattenedErrors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       await supabaseAdmin.auth.admin.listUsers();
 
     const existingUser = listUserData?.users.find(
-      (user) => user.email === email
+      (user) => user.email === email,
     );
 
     if (userError) {
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
           message: `Error listing users:, ${userError.message}`,
           error: { email: [`Error listing users:, ${userError.message}`] },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
           message: "Email sudah terdaftar",
           error: { email: ["Email already registered"] },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
           message: error.message,
           error: { auth: [error.message] },
         },
-        { status: error.status || 400 }
+        { status: error.status || 400 },
       );
     }
 
@@ -93,7 +93,7 @@ export async function POST(request: Request) {
           message: "Gagal membuat user",
           error: { auth: ["User object not returned"] },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -107,7 +107,37 @@ export async function POST(request: Request) {
       console.error(`Error fetching role recruiter:`, roleError);
       return NextResponse.json(
         { error: `Role recruiter not found` },
-        { status: 500 }
+        { status: 500 },
+      );
+    }
+
+    // Validasi apakah user sudah terdaftar di user_roles
+    const { data: existingUserRole, error: checkRoleError } = await supabase
+      .from("user_roles")
+      .select("id")
+      .eq("user_id", data.user?.id)
+      .maybeSingle();
+
+    if (checkRoleError) {
+      console.error(`Error checking existing role:`, checkRoleError);
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Gagal memvalidasi role user",
+          error: { role: [checkRoleError.message] },
+        },
+        { status: 500 },
+      );
+    }
+
+    if (existingUserRole) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "User sudah terdaftar dengan role tertentu",
+          error: { role: ["User already has a role assigned"] },
+        },
+        { status: 400 },
       );
     }
 
@@ -124,13 +154,13 @@ export async function POST(request: Request) {
             message: "Role sudah terdaftar",
             error: { role: ["Role already registered"] },
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
       console.error(`Error assigning role recruiter:`, insertError);
       return NextResponse.json(
         { error: `Failed to assign role recruiter` },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -155,7 +185,7 @@ export async function POST(request: Request) {
         message: "Internal Server Error",
         error: { server: [errorMessage] },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
