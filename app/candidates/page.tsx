@@ -1,10 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { DashboardContent } from "@/modules/dashboard";
+import { CandidatesContent } from "@/modules/candidates";
 
-export const dynamic = "force-dynamic";
-
-export default async function DashboardPage() {
+export default async function CandidatesPage() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -14,5 +12,5 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  return <DashboardContent user={user} />;
+  return <CandidatesContent user={user} />;
 }
