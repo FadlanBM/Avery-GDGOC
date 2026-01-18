@@ -65,7 +65,7 @@ export default function DashboardSidebar({ user }: DashboardSidebarProps) {
   ];
 
   return (
-    <aside className="w-64 bg-white border-r">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-white border-r">
       <div className="flex h-full flex-col">
         <div className="flex h-16 items-center px-6">
           <div className="flex items-center gap-2">

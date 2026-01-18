@@ -36,7 +36,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
   };
 
   return (
-    <header className="h-16 border-b bg-white flex items-center justify-between px-8">
+    <header className="fixed top-0 right-0 z-30 h-16 border-b bg-white flex items-center justify-between px-8" style={{ left: '16rem' }}>
       <div className="flex items-center gap-4 flex-1 max-w-md">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />

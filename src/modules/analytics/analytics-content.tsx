@@ -21,12 +21,12 @@ export default function AnalyticsContent({ user }: AnalyticsContentProps) {
       <DashboardSidebar />
       
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col ml-64">
         {/* Header */}
         <DashboardHeader user={user} />
         
         {/* Page Content */}
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-8 mt-16">
           <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-50 mb-4">
             Analytics
           </h1>
