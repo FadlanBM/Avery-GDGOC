@@ -11,10 +11,12 @@ export async function updateSession(request: NextRequest) {
 
   if (!supabaseUrl || !supabaseAnonKey) {
     console.error('Missing Supabase environment variables')
-    // Jika environment variables tidak ada, izinkan akses ke login/register
+    // Jika environment variables tidak ada, izinkan akses ke login/register/dashboard
     if (
       !request.nextUrl.pathname.startsWith('/login') &&
-      !request.nextUrl.pathname.startsWith('/register')
+      !request.nextUrl.pathname.startsWith('/register') &&
+      !request.nextUrl.pathname.startsWith('/dashboard') &&
+      !request.nextUrl.pathname.startsWith('/dashboard')
     ) {
       const url = request.nextUrl.clone()
       url.pathname = '/login'
@@ -52,11 +54,12 @@ export async function updateSession(request: NextRequest) {
     user = fetchedUser
   } catch (error) {
     console.error('Error fetching user:', error)
-    // Jika error fetch, izinkan akses ke login/register
+    // Jika error fetch, izinkan akses ke login/register/dashboard
     if (
       !request.nextUrl.pathname.startsWith('/login') &&
       !request.nextUrl.pathname.startsWith('/register') &&
-      !request.nextUrl.pathname.startsWith('/auth/callback')
+      !request.nextUrl.pathname.startsWith('/auth/callback') &&
+      !request.nextUrl.pathname.startsWith('/dashboard')
     ) {
       const url = request.nextUrl.clone()
       url.pathname = '/login'
@@ -68,7 +71,8 @@ export async function updateSession(request: NextRequest) {
     !user &&
     !request.nextUrl.pathname.startsWith('/login') &&
     !request.nextUrl.pathname.startsWith('/register') &&
-    !request.nextUrl.pathname.startsWith('/auth/callback')
+    !request.nextUrl.pathname.startsWith('/auth/callback') &&
+    !request.nextUrl.pathname.startsWith('/dashboard')
   ) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone()
