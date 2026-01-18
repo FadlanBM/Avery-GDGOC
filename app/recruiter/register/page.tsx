@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,9 +16,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export default function RegisterPage() {
+export default function RecruiterRegisterPage() {
   const router = useRouter();
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -42,22 +43,23 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const response = await axios.post("/api/auth/register", {
+      const response = await axios.post("/api/auth-recruiter/register", {
+        username,
         email,
         password,
-        origin: window.location.origin,
+        phone,
       });
 
       if (response.status === 200) {
         router.push(
-          "/login?message=Silakan cek email Anda untuk verifikasi akun"
+          "/recruiter/login?message=Silakan cek email Anda untuk verifikasi akun recruiter",
         );
       }
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        setError(
-          err.response?.data?.error || "Terjadi kesalahan saat mendaftar"
-        );
+        const message =
+          err.response?.data?.message || "Terjadi kesalahan saat mendaftar";
+        setError(message);
       } else {
         setError("Terjadi kesalahan koneksi saat mendaftar");
       }
@@ -67,15 +69,17 @@ export default function RegisterPage() {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = "/api/auth/google";
+    window.location.href = "/api/auth-recruiter/google";
   };
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Daftar</CardTitle>
-          <CardDescription>Buat akun baru untuk memulai</CardDescription>
+          <CardTitle>Daftar Recruiter</CardTitle>
+          <CardDescription>
+            Buat akun recruiter untuk memasang dan mengelola lowongan kerja
+          </CardDescription>
         </CardHeader>
         <form onSubmit={handleRegister}>
           <CardContent className="space-y-4">
@@ -85,13 +89,37 @@ export default function RegisterPage() {
               </div>
             )}
             <div className="space-y-2">
+              <Label htmlFor="username">Nama Lengkap</Label>
+              <Input
+                id="username"
+                type="text"
+                placeholder="Nama lengkap Anda"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="nama@example.com"
+                placeholder="nama@perusahaan.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Nomor Telepon</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="08xxxxxxxxxx"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 required
                 disabled={loading}
               />
@@ -123,7 +151,7 @@ export default function RegisterPage() {
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Memproses..." : "Daftar"}
+              {loading ? "Memproses..." : "Daftar sebagai Recruiter"}
             </Button>
 
             <div className="relative">
@@ -161,9 +189,9 @@ export default function RegisterPage() {
             </Button>
 
             <div className="text-center text-sm">
-              Sudah punya akun?{" "}
-              <Link href="/login" className="text-primary underline">
-                Login di sini
+              Sudah punya akun recruiter?{" "}
+              <Link href="/recruiter/login" className="text-primary underline">
+                Login recruiter di sini
               </Link>
             </div>
           </CardFooter>

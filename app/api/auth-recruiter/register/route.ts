@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
+import { Phone } from "lucide-react";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -6,6 +7,7 @@ const registerSchema = z.object({
   username: z.string().min(1, "Nama wajib diisi"),
   email: z.string().email("Format email tidak valid"),
   password: z.string().min(6, "Password minimal 6 karakter"),
+  phone: z.string().min(10, "Nomor telepon minimal 10 karakter"),
 });
 
 export async function POST(request: Request) {
@@ -27,15 +29,28 @@ export async function POST(request: Request) {
       );
     }
 
-    const { email, password, username } = validation.data;
+    const { email, password, username, phone } = validation.data;
     const supabase = await createClient();
+    const supabaseAdmin = await createAdminClient();
 
-    // Cek apakah email sudah terdaftar di tabel users
-    const { data: existingUser } = await supabase
-      .from("users")
-      .select("email")
-      .eq("email", email)
-      .maybeSingle();
+    const { data: listUserData, error: userError } =
+      await supabaseAdmin.auth.admin.listUsers();
+
+    const existingUser = listUserData?.users.find(
+      (user) => user.email === email
+    );
+
+    if (userError) {
+      console.error(`Error listing users:`, userError);
+      return NextResponse.json(
+        {
+          status: false,
+          message: `Error listing users:, ${userError.message}`,
+          error: { email: [`Error listing users:, ${userError.message}`] },
+        },
+        { status: 400 }
+      );
+    }
 
     if (existingUser) {
       return NextResponse.json(
@@ -54,7 +69,8 @@ export async function POST(request: Request) {
       options: {
         emailRedirectTo: `${origin}/auth/callback`,
         data: {
-          display_name: username,
+          full_name: username,
+          phone: phone,
         },
       },
     });
@@ -81,20 +97,50 @@ export async function POST(request: Request) {
       );
     }
 
-    // Gunakan upsert untuk menghindari error jika trigger database sudah membuat profile duluan
-    const { error: insertError } = await supabase.from("profiles").upsert({
-      id: data.user.id,
-      role: "recruiter",
+    const { data: roleData, error: roleError } = await supabase
+      .from("roles")
+      .select("id, name")
+      .eq("name", "recruiter")
+      .single();
+
+    if (roleError || !roleData) {
+      console.error(`Error fetching role recruiter:`, roleError);
+      return NextResponse.json(
+        { error: `Role recruiter not found` },
+        { status: 500 }
+      );
+    }
+
+    const { error: insertError } = await supabase.from("user_roles").insert({
+      user_id: data.user?.id,
+      role_id: roleData.id,
     });
 
     if (insertError) {
-      console.error("Error inserting user role:", insertError.message);
+      if (insertError.code === "23505") {
+        return NextResponse.json(
+          {
+            status: false,
+            message: "Role sudah terdaftar",
+            error: { role: ["Role already registered"] },
+          },
+          { status: 400 }
+        );
+      }
+      console.error(`Error assigning role recruiter:`, insertError);
+      return NextResponse.json(
+        { error: `Failed to assign role recruiter` },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
       status: true,
       message: "Registrasi berhasil",
-      data,
+      data: {
+        ...data,
+        role: roleData.name,
+      },
     });
   } catch (error) {
     console.error("Register error:", error);

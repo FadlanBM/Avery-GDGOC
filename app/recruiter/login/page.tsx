@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-function LoginForm() {
+function RecruiterLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const message = searchParams.get("message");
@@ -30,11 +29,9 @@ function LoginForm() {
 
   useEffect(() => {
     if (message) {
-      // Tampilkan pesan sukses dari register
       setError(null);
     }
     if (errorParam) {
-      // Tampilkan error dari OAuth callback
       setError(decodeURIComponent(errorParam));
     }
   }, [message, errorParam]);
@@ -45,7 +42,7 @@ function LoginForm() {
     setLoading(true);
 
     try {
-      const response = await axios.post("/api/auth-candidate/login", {
+      const response = await axios.post("/api/auth-recruiter/login", {
         email,
         password,
       });
@@ -55,7 +52,6 @@ function LoginForm() {
         router.push("/dashboard");
       }
     } catch (err) {
-      console.error("Login error:", err);
       if (axios.isAxiosError(err)) {
         const errorMessage =
           err.response?.data?.message || "Terjadi kesalahan saat login";
@@ -69,14 +65,16 @@ function LoginForm() {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = "/api/auth-candidate/google";
+    window.location.href = "/api/auth-recruiter/google";
   };
 
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>Login</CardTitle>
-        <CardDescription>Masuk ke akun Anda untuk melanjutkan</CardDescription>
+        <CardTitle>Login Recruiter</CardTitle>
+        <CardDescription>
+          Masuk sebagai recruiter untuk mengelola lowongan kerja
+        </CardDescription>
       </CardHeader>
       <form onSubmit={handleLogin}>
         <CardContent className="space-y-4">
@@ -97,7 +95,7 @@ function LoginForm() {
             <Input
               id="email"
               type="email"
-              placeholder="nama@example.com"
+              placeholder="nama@perusahaan.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -157,9 +155,9 @@ function LoginForm() {
           </Button>
 
           <div className="text-center text-sm">
-            Belum punya akun?{" "}
-            <Link href="/register" className="text-primary underline">
-              Daftar di sini
+            Belum punya akun recruiter?{" "}
+            <Link href="/recruiter/register" className="text-primary underline">
+              Daftar recruiter di sini
             </Link>
           </div>
         </CardFooter>
@@ -168,12 +166,13 @@ function LoginForm() {
   );
 }
 
-export default function LoginPage() {
+export default function RecruiterLoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <Suspense fallback={<div>Loading...</div>}>
-        <LoginForm />
+        <RecruiterLoginForm />
       </Suspense>
     </div>
   );
 }
+

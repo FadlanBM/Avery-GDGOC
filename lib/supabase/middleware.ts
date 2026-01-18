@@ -14,7 +14,9 @@ export async function updateSession(request: NextRequest) {
     // Jika environment variables tidak ada, izinkan akses ke login/register
     if (
       !request.nextUrl.pathname.startsWith("/login") &&
-      !request.nextUrl.pathname.startsWith("/register")
+      !request.nextUrl.pathname.startsWith("/register") &&
+      !request.nextUrl.pathname.startsWith("/recruiter/login") &&
+      !request.nextUrl.pathname.startsWith("/recruiter/register")
     ) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
@@ -30,13 +32,13 @@ export async function updateSession(request: NextRequest) {
       },
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) =>
-          request.cookies.set(name, value)
+          request.cookies.set(name, value),
         );
         supabaseResponse = NextResponse.next({
           request,
         });
         cookiesToSet.forEach(({ name, value, options }) =>
-          supabaseResponse.cookies.set(name, value, options)
+          supabaseResponse.cookies.set(name, value, options),
         );
       },
     },
@@ -58,6 +60,8 @@ export async function updateSession(request: NextRequest) {
     if (
       !request.nextUrl.pathname.startsWith("/login") &&
       !request.nextUrl.pathname.startsWith("/register") &&
+      !request.nextUrl.pathname.startsWith("/recruiter/login") &&
+      !request.nextUrl.pathname.startsWith("/recruiter/register") &&
       !request.nextUrl.pathname.startsWith("/auth/callback")
     ) {
       const url = request.nextUrl.clone();
@@ -70,11 +74,15 @@ export async function updateSession(request: NextRequest) {
     !user &&
     !request.nextUrl.pathname.startsWith("/login") &&
     !request.nextUrl.pathname.startsWith("/register") &&
+    !request.nextUrl.pathname.startsWith("/recruiter/login") &&
+    !request.nextUrl.pathname.startsWith("/recruiter/register") &&
     !request.nextUrl.pathname.startsWith("/auth/callback") &&
     !request.nextUrl.pathname.startsWith("/api/auth-recruiter/login") &&
     !request.nextUrl.pathname.startsWith("/api/auth-recruiter/register") &&
     !request.nextUrl.pathname.startsWith("/api/auth-candidate/login") &&
-    !request.nextUrl.pathname.startsWith("/api/auth-candidate/register")
+    !request.nextUrl.pathname.startsWith("/api/auth-candidate/register") &&
+    !request.nextUrl.pathname.startsWith("/api/auth-candidate/google") &&
+    !request.nextUrl.pathname.startsWith("/api/auth-recruiter/google")
   ) {
     // Jika permintaan datang dari API, kembalikan JSON error
     if (request.nextUrl.pathname.startsWith("/api/")) {
@@ -84,7 +92,7 @@ export async function updateSession(request: NextRequest) {
           message: "Unauthorized: Silakan login terlebih dahulu",
           error: { auth: ["Session not found"] },
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 

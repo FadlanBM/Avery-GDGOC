@@ -22,29 +22,29 @@ export async function GET() {
       );
     }
 
-    // 2. Ambil profile user untuk mendapatkan company_id
+    // 2. Ambil profile user untuk mendapatkan companie_id
     const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("company_id")
-      .eq("id", session.user.id)
+      .from("hrd_employee_data")
+      .select("companie_id")
+      .eq("user_id", session.user.id)
       .single();
 
-    if (profileError || !profile?.company_id) {
+    if (profileError || !profile?.companie_id) {
       return NextResponse.json(
         {
           status: false,
           message: "User belum terhubung dengan perusahaan manapun",
-          error: { database: ["No company_id found for this user"] },
+          error: { database: ["No companie_id found for this user"] },
         },
         { status: 404 }
       );
     }
 
-    // 3. Ambil data perusahaan berdasarkan company_id tersebut
+    // 3. Ambil data perusahaan berdasarkan companie_id tersebut
     const { data: company, error: companyError } = await supabase
       .from("companies")
       .select("*")
-      .eq("id", profile.company_id)
+      .eq("id", profile.companie_id)
       .single();
 
     if (companyError || !company) {
@@ -117,8 +117,6 @@ const companieUpdateSchema = companySchema.partial();
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
-
-    // 1. Cek Autentikasi
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -132,8 +130,52 @@ export async function POST(request: Request) {
         { status: 401 }
       );
     }
+    // 2. Cek apakah user sudah memiliki perusahaan
+    const { data: profile, error: profileError } = await supabase
+      .from("hrd_employee_data")
+      .select("companie_id")
+      .eq("user_id", session.user.id)
+      .maybeSingle();
 
-    // 2. Ambil & Validasi Body
+    if (profileError) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Gagal memvalidasi data profil",
+          error: { database: [profileError.message] },
+        },
+        { status: 400 }
+      );
+    }
+
+    const { data: companyDataFind, error: companyError } = await supabase
+      .from("companies")
+      .select("id")
+      .eq("id", profile?.companie_id)
+      .maybeSingle();
+
+    if (companyError) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Gagal memvalidasi data profil",
+          error: { database: [companyError.message] },
+        },
+        { status: 400 }
+      );
+    }
+
+    if (companyDataFind?.id) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Anda sudah terdaftar dalam sebuah perusahaan",
+          error: { auth: ["User already has a company assigned"] },
+        },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
     const validation = companySchema.safeParse(body);
 
@@ -151,8 +193,6 @@ export async function POST(request: Request) {
     }
 
     const companyData = validation.data;
-
-    // 3. Simpan ke Database
     const { data, error } = await supabase
       .from("companies")
       .insert([
@@ -162,7 +202,9 @@ export async function POST(request: Request) {
             companyData.website_url === "" ? null : companyData.website_url, // Ubah string kosong jadi null
         },
       ])
-      .select()
+      .select(
+        "id, name,industry,employee_count,location,description,website_url"
+      )
       .single();
 
     if (error) {
@@ -177,11 +219,22 @@ export async function POST(request: Request) {
       );
     }
 
-    // 4. Update company_id di profile user (Opsional: jika pembuat otomatis jadi bagian dari perusahaan ini)
-    await supabase
-      .from("profiles")
-      .update({ company_id: data.id })
-      .eq("id", session.user.id);
+    const { error: updateError } = await supabase
+      .from("hrd_employee_data")
+      .update({ companie_id: data.id })
+      .eq("user_id", session.user.id);
+
+    if (updateError) {
+      console.error("Error updating hrd_employee_data:", updateError.message);
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Gagal menghubungkan profil HRD dengan perusahaan",
+          error: { database: [updateError.message] },
+        },
+        { status: 400 }
+      );
+    }
 
     return NextResponse.json({
       status: true,
@@ -222,19 +275,19 @@ export async function PUT(request: Request) {
       );
     }
 
-    // 2. Ambil profile user untuk mendapatkan company_id
+    // 2. Ambil profile user untuk mendapatkan companie_id
     const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("company_id")
-      .eq("id", session.user.id)
+      .from("hrd_employee_data")
+      .select("companie_id")
+      .eq("user_id", session.user.id)
       .single();
 
-    if (profileError || !profile?.company_id) {
+    if (profileError || !profile?.companie_id) {
       return NextResponse.json(
         {
           status: false,
           message: "User belum terhubung dengan perusahaan manapun",
-          error: { database: ["No company_id found for this user"] },
+          error: { database: ["No companie_id found for this user"] },
         },
         { status: 404 }
       );
@@ -265,7 +318,7 @@ export async function PUT(request: Request) {
       .update({
         ...updateData,
       })
-      .eq("id", profile.company_id)
+      .eq("id", profile.companie_id)
       .select()
       .single();
 

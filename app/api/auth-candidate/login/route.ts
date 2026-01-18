@@ -21,7 +21,7 @@ export async function POST(request: Request) {
           message: firstErrorMessage,
           error: flattenedErrors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
           message: error.message,
           error: { auth: [error.message] },
         },
-        { status: error.status || 401 }
+        { status: error.status || 401 },
       );
     }
 
@@ -57,21 +57,20 @@ export async function POST(request: Request) {
           message: "Data profil belum tersedia. Silakan lengkapi profil Anda.",
           error: { auth: ["Profile data not found"] },
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // Validasi jika akun tidak aktif
     if (profile.is_active === false) {
       await supabase.auth.signOut();
-
       return NextResponse.json(
         {
           status: false,
           message: "Akun Anda dinonaktifkan. Silakan hubungi admin.",
           error: { auth: ["Account is inactive"] },
         },
-        { status: 403 } // Forbidden
+        { status: 403 },
       );
     }
 
@@ -92,7 +91,7 @@ export async function POST(request: Request) {
         message: "Internal Server Error",
         error: { server: [errorMessage] },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

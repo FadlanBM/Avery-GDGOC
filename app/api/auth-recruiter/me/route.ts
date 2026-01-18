@@ -40,17 +40,30 @@ export async function GET() {
     }
 
     const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("full_name, role")
-      .eq("id", user.id)
+      .from("hrd_employee_data")
+      .select(
+        "user_id,fullname, gender, dateofbirth, address, position, is_active"
+      )
+      .eq("user_id", user.id)
       .maybeSingle();
 
-    if (profileError || !profile) {
+    if (!profile?.user_id) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Data profil belum tersedia. Silakan lengkapi profil Anda.",
+          error: { auth: ["Profile data not found"] },
+        },
+        { status: 403 }
+      );
+    }
+
+    if (profileError) {
       return NextResponse.json(
         {
           status: false,
           message: "Unauthorized: Silakan login terlebih dahulu",
-          error: { auth: [profileError?.message || "User not found"] },
+          error: { auth: [profileError || "User not found"] },
         },
         { status: 401 }
       );
@@ -60,11 +73,15 @@ export async function GET() {
     return NextResponse.json({
       status: true,
       message: "Data user berhasil diambil",
-      user: {
+      data: {
         id: user.id,
         email: user.email,
-        name: profile.full_name || user.user_metadata?.full_name || null,
-        role: profile.role,
+        fullname: profile.fullname,
+        gender: profile.gender,
+        dateofbirth: profile.dateofbirth,
+        address: profile.address,
+        position: profile.position,
+        is_active: profile.is_active,
         avatar: user.user_metadata?.avatar_url || null,
         last_sign_in: user.last_sign_in_at,
       },

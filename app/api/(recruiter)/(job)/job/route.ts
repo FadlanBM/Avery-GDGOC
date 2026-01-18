@@ -43,18 +43,18 @@ export async function POST(request: Request) {
     }
 
     const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("company_id")
-      .eq("id", session.user.id)
+      .from("hrd_employee_data")
+      .select("companie_id")
+      .eq("user_id", session.user.id)
       .single();
 
-    if (profileError || !profile?.company_id) {
+    if (profileError || !profile?.companie_id) {
       return NextResponse.json(
         {
           status: false,
           message:
             "Anda harus terhubung dengan perusahaan untuk membuat lowongan",
-          error: { database: ["No company_id found for this user"] },
+          error: { database: ["No companie_id found for this user"] },
         },
         { status: 403 }
       );
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
       .insert([
         {
           ...jobData,
-          company_id: profile.company_id,
+          company_id: profile.companie_id,
           created_by_user_id: session.user.id,
           published_at:
             jobData.status === "published" ? new Date().toISOString() : null,
