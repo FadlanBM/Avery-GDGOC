@@ -12,5 +12,5 @@ export default async function SettingsPage() {
     redirect("/login");
   }
 
-  return <SettingsContent />;
+  return <SettingsContent user={user} />;
 }

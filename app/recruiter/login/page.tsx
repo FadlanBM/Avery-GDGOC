@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,49 +17,47 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export default function RegisterForm() {
+function RecruiterLoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const message = searchParams.get("message");
+  const errorParam = searchParams.get("error");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleRegister = async (e: React.FormEvent) => {
+  useEffect(() => {
+    if (message) {
+      setError(null);
+    }
+    if (errorParam) {
+      setError(decodeURIComponent(errorParam));
+    }
+  }, [message, errorParam]);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
-    if (password !== confirmPassword) {
-      setError("Password dan konfirmasi password tidak cocok");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Password harus minimal 6 karakter");
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const response = await axios.post("/api/auth/register", {
+      const response = await axios.post("/api/auth-recruiter/login", {
         email,
         password,
-        origin: window.location.origin,
       });
 
       if (response.status === 200) {
-        router.push(
-          "/login?message=Silakan cek email Anda untuk verifikasi akun"
-        );
+        router.refresh();
+        router.push("/dashboard");
       }
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        setError(
-          err.response?.data?.error || "Terjadi kesalahan saat mendaftar"
-        );
+        const errorMessage =
+          err.response?.data?.message || "Terjadi kesalahan saat login";
+        setError(errorMessage);
       } else {
-        setError("Terjadi kesalahan koneksi saat mendaftar");
+        setError("Terjadi kesalahan koneksi saat login");
       }
     } finally {
       setLoading(false);
@@ -66,20 +65,29 @@ export default function RegisterForm() {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = "/api/auth/google";
+    window.location.href = "/api/auth-recruiter/google";
   };
 
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>Register</CardTitle>
-        <CardDescription>Buat akun baru untuk memulai</CardDescription>
+        <CardTitle>Login Recruiter</CardTitle>
+        <CardDescription>
+          Masuk sebagai recruiter untuk mengelola lowongan kerja
+        </CardDescription>
       </CardHeader>
-      <form onSubmit={handleRegister}>
+      <form onSubmit={handleLogin}>
         <CardContent className="space-y-4">
+          {message && (
+            <div className="flex items-center gap-2 rounded-md bg-green-500/15 p-3 text-sm text-green-600 dark:text-green-400">
+              <CheckCircle2 className="h-4 w-4" />
+              <span>{message}</span>
+            </div>
+          )}
           {error && (
-            <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-              {error}
+            <div className="flex items-center gap-2 rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              <span>{error}</span>
             </div>
           )}
           <div className="space-y-2">
@@ -87,7 +95,7 @@ export default function RegisterForm() {
             <Input
               id="email"
               type="email"
-              placeholder="nama@example.com"
+              placeholder="nama@perusahaan.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -106,22 +114,10 @@ export default function RegisterForm() {
               disabled={loading}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Konfirmasi Password</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              disabled={loading}
-            />
-          </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Memproses..." : "Daftar"}
+            {loading ? "Memproses..." : "Login"}
           </Button>
 
           <div className="relative">
@@ -159,9 +155,9 @@ export default function RegisterForm() {
           </Button>
 
           <div className="text-center text-sm">
-            Sudah punya akun?{" "}
-            <Link href="/login" className="text-primary underline">
-              Login di sini
+            Belum punya akun recruiter?{" "}
+            <Link href="/recruiter/register" className="text-primary underline">
+              Daftar recruiter di sini
             </Link>
           </div>
         </CardFooter>
@@ -169,3 +165,14 @@ export default function RegisterForm() {
     </Card>
   );
 }
+
+export default function RecruiterLoginPage() {
+  return (
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <Suspense fallback={<div>Loading...</div>}>
+        <RecruiterLoginForm />
+      </Suspense>
+    </div>
+  );
+}
+

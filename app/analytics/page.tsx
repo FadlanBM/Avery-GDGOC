@@ -12,5 +12,5 @@ export default async function AnalyticsPage() {
     redirect("/login");
   }
 
-  return <AnalyticsContent />;
+  return <AnalyticsContent user={user} />;
 }

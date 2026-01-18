@@ -4,9 +4,21 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MetricCard } from "@/components/metric-card";
 import { ActivityItem } from "@/components/activity-item";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Users, Calendar, Briefcase, Clock, Search, Bell, ChevronLeft, ChevronRight } from "lucide-react";
+import DashboardSidebar from "@/components/dashboard-sidebar";
+import DashboardHeader from "@/components/dashboard-header";
+import { Users, Calendar, Briefcase, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+
+interface DashboardContentProps {
+  user: {
+    id: string;
+    email?: string;
+    user_metadata?: {
+      name?: string;
+      full_name?: string;
+    };
+  };
+}
 
 // Mock activities data
 const allActivities = [
@@ -117,7 +129,7 @@ const allActivities = [
   },
 ];
 
-export default function DashboardContent() {
+export default function DashboardContent({ user }: DashboardContentProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
   
@@ -132,45 +144,29 @@ export default function DashboardContent() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
-      <div className="p-8">
+    <div className="flex min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
+      {/* Sidebar */}
+      <DashboardSidebar />
+      
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
+        <DashboardHeader user={user} />
+        
+        {/* Page Content */}
+        <main className="flex-1 p-8">
+          {/* Welcome Section */}
+          <div className="mb-8">
             <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-50">
-              Good Evening, Maya
+              Good Evening, {user.user_metadata?.name || user.user_metadata?.full_name || user.email?.split('@')[0]}
             </h1>
             <p className="text-neutral-600 dark:text-neutral-400 mt-1">
               Here&apos;s what&apos;s happening with your recruitment pipeline today.
             </p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
-              <Input
-                placeholder="Search candidates, jobs..."
-                className="pl-10 w-80"
-              />
-            </div>
-            <Button variant="outline" size="icon">
-              <Bell className="h-5 w-5" />
-            </Button>
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-neutral-300 dark:border-neutral-600 bg-transparent" />
-              <div>
-                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">
-                  Maya Kim
-                </p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                  HR Recruiter
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Metrics Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+          {/* Metrics Grid */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
           <MetricCard
             icon={Users}
             iconColor="text-blue-500"
@@ -286,6 +282,7 @@ export default function DashboardContent() {
             </div>
           </CardContent>
         </Card>
+        </main>
       </div>
     </div>
   );

@@ -12,5 +12,5 @@ export default async function JobOpeningsPage() {
     redirect("/login");
   }
 
-  return <JobOpeningsContent />;
+  return <JobOpeningsContent user={user} />;
 }

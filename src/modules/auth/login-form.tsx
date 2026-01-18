@@ -3,7 +3,8 @@
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import axios from "axios";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,50 +44,31 @@ function LoginFormContent() {
     setLoading(true);
 
     try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({
+      const response = await axios.post("/api/auth-candidate/login", {
         email,
         password,
       });
 
-      if (error) {
-        setError(error.message);
-      } else {
-        router.push("/");
+      if (response.status === 200) {
         router.refresh();
+        router.push("/dashboard");
       }
-    } catch {
-      setError("Terjadi kesalahan saat login");
+    } catch (err) {
+      console.error("Login error:", err);
+      if (axios.isAxiosError(err)) {
+        const errorMessage =
+          err.response?.data?.message || "Terjadi kesalahan saat login";
+        setError(errorMessage);
+      } else {
+        setError("Terjadi kesalahan koneksi saat login");
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setError(null);
-    setLoading(true);
-
-    try {
-      const supabase = createClient();
-      const siteUrl =
-        process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${siteUrl}/auth/callback`,
-        },
-      });
-      if (error) {
-        setError(error.message);
-        setLoading(false);
-      } else if (data?.url) {
-        // Redirect ke Google OAuth
-        window.location.href = data.url;
-      }
-    } catch {
-      setError("Terjadi kesalahan saat login dengan Google");
-      setLoading(false);
-    }
+  const handleGoogleLogin = () => {
+    window.location.href = "/api/auth-candidate/google";
   };
 
   return (
@@ -98,15 +80,17 @@ function LoginFormContent() {
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleLogin}>
-        <CardContent className="space-y-2">
+        <CardContent className="space-y-4">
           {message && (
-            <div className="rounded-md bg-green-500/15 p-3 text-sm text-green-600 dark:text-green-400">
-              {message}
+            <div className="flex items-center gap-2 rounded-md bg-green-500/15 p-3 text-sm text-green-600 dark:text-green-400">
+              <CheckCircle2 className="h-4 w-4" />
+              <span>{message}</span>
             </div>
           )}
           {error && (
-            <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-              {error}
+            <div className="flex items-center gap-2 rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              <span>{error}</span>
             </div>
           )}
           <div className="space-y-2">
@@ -134,7 +118,7 @@ function LoginFormContent() {
             />
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-3">
+        <CardFooter className="flex flex-col space-y-4">
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Memproses..." : "Login"}
           </Button>
@@ -150,7 +134,8 @@ function LoginFormContent() {
 
           <Button
             type="button"
-            className="w-full bg-white border border-primary text-primary hover:bg-gray-100"
+            variant="outline"
+            className="w-full"
             onClick={handleGoogleLogin}
             disabled={loading}
           >
@@ -175,7 +160,7 @@ function LoginFormContent() {
           <div className="text-center text-sm">
             Belum punya akun?{" "}
             <Link href="/register" className="text-primary underline">
-              Register di sini
+              Daftar di sini
             </Link>
           </div>
         </CardFooter>
