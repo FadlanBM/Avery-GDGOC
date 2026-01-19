@@ -17,6 +17,7 @@ interface JobOpeningsDrawerProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  onJobCreated?: () => void;
 }
 
 export function Drawer({
@@ -24,10 +25,11 @@ export function Drawer({
   currentPage,
   totalPages,
   onPageChange,
+  onJobCreated,
 }: JobOpeningsDrawerProps) {
   return (
     <main className="flex-1 p-8 mt-16">
-      <PageHeader />
+      <PageHeader onJobCreated={onJobCreated} />
       
       <JobsGrid jobs={currentJobs} />
       
