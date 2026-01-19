@@ -1,8 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Pagination } from "@/components/pagination";
 import { WelcomeSection } from "./welcome-section";
 import { MetricsGrid } from "./metrics-grid";
 import { ActivityList } from "./activity-list";
-import { PaginationControls } from "./pagination-controls";
 
 interface Activity {
   id: number;
@@ -49,10 +49,11 @@ export function Drawer({
         <CardContent>
           <ActivityList activities={currentActivities} />
           
-          <PaginationControls
+          <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={onPageChange}
+            variant="full"
           />
         </CardContent>
       </Card>

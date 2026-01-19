@@ -111,15 +111,7 @@ export default function JobOpeningsContainer({ user }: JobOpeningsContainerProps
   const endIndex = startIndex + itemsPerPage;
   const currentJobs = jobOpenings.slice(startIndex, endIndex);
   
-  const handlePreviousPage = () => {
-    setCurrentPage((prev) => Math.max(prev - 1, 1));
-  };
-  
-  const handleNextPage = () => {
-    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
-  };
-  
-  const handlePageClick = (page: number) => {
+  const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
 
@@ -134,9 +126,7 @@ export default function JobOpeningsContainer({ user }: JobOpeningsContainerProps
           currentJobs={currentJobs}
           currentPage={currentPage}
           totalPages={totalPages}
-          onPreviousPage={handlePreviousPage}
-          onNextPage={handleNextPage}
-          onPageClick={handlePageClick}
+          onPageChange={handlePageChange}
         />
       </div>
     </div>

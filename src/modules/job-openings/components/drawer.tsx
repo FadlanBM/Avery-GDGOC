@@ -1,6 +1,6 @@
+import { Pagination } from "@/components/pagination";
 import { PageHeader } from "./page-header";
 import { JobsGrid } from "./jobs-grid";
-import { JobPagination } from "./job-pagination";
 
 interface Job {
   id: number;
@@ -16,18 +16,14 @@ interface JobOpeningsDrawerProps {
   currentJobs: Job[];
   currentPage: number;
   totalPages: number;
-  onPreviousPage: () => void;
-  onNextPage: () => void;
-  onPageClick: (page: number) => void;
+  onPageChange: (page: number) => void;
 }
 
 export function Drawer({
   currentJobs,
   currentPage,
   totalPages,
-  onPreviousPage,
-  onNextPage,
-  onPageClick,
+  onPageChange,
 }: JobOpeningsDrawerProps) {
   return (
     <main className="flex-1 p-8 mt-16">
@@ -35,12 +31,12 @@ export function Drawer({
       
       <JobsGrid jobs={currentJobs} />
       
-      <JobPagination
+      <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
-        onPreviousPage={onPreviousPage}
-        onNextPage={onNextPage}
-        onPageClick={onPageClick}
+        onPageChange={onPageChange}
+        variant="simple"
+        showFirstLast={false}
       />
     </main>
   );
