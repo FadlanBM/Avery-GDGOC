@@ -220,7 +220,7 @@ export default function DashboardContent({ user }: DashboardContentProps) {
             </div>
 
             {/* Pagination */}
-            <div className="flex items-center justify-center gap-2 mt-6 pt-6 border-t">
+            <div className="flex items-center justify-end gap-2 mt-6 pt-6 border-t">
               <Button
                 variant="outline"
                 size="icon"
@@ -243,7 +243,7 @@ export default function DashboardContent({ user }: DashboardContentProps) {
                 <Button
                   key={page}
                   variant={currentPage === page ? "default" : "outline"}
-                  className={currentPage === page ? "bg-blue-500 hover:bg-blue-600" : ""}
+                  className={currentPage === page ? "bg-[#265BFF] hover:bg-[#1E4ED8]" : ""}
                   onClick={() => goToPage(page)}
                 >
                   {page}
@@ -255,7 +255,7 @@ export default function DashboardContent({ user }: DashboardContentProps) {
               {totalPages > 3 && (
                 <Button
                   variant={currentPage === totalPages ? "default" : "outline"}
-                  className={currentPage === totalPages ? "bg-blue-500 hover:bg-blue-600" : ""}
+                  className={currentPage === totalPages ? "bg-[#265BFF] hover:bg-[#1E4ED8]" : ""}
                   onClick={() => goToPage(totalPages)}
                 >
                   {totalPages}
