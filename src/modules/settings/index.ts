@@ -1,1 +1,1 @@
-export { default as SettingsContent } from "./settings-content";
+export { default as SettingsContainer } from "./settings-container";

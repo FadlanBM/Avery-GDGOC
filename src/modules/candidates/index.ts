@@ -1,1 +1,1 @@
-export { default as CandidatesContent } from "./candidates-content";
+export { default as CandidatesContainer } from "./candidates-container";

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { AnalyticsContent } from "@/modules/analytics";
+import { AnalyticsContainer } from "@/modules/analytics";
 
 export default async function AnalyticsPage() {
   const supabase = await createClient();
@@ -12,5 +12,5 @@ export default async function AnalyticsPage() {
     redirect("/login");
   }
 
-  return <AnalyticsContent user={user} />;
+  return <AnalyticsContainer user={user} />;
 }

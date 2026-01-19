@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { JobOpeningsContent } from "@/modules/job-openings";
+import { JobOpeningsContainer } from "@/modules/job-openings";
 
 export default async function JobOpeningsPage() {
   const supabase = await createClient();
@@ -12,5 +12,5 @@ export default async function JobOpeningsPage() {
     redirect("/login");
   }
 
-  return <JobOpeningsContent user={user} />;
+  return <JobOpeningsContainer user={user} />;
 }
