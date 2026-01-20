@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { SettingsContent } from "@/modules/settings";
+import { SettingsContainer } from "@/modules/settings";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -12,5 +12,5 @@ export default async function SettingsPage() {
     redirect("/login");
   }
 
-  return <SettingsContent user={user} />;
+  return <SettingsContainer user={user} />;
 }

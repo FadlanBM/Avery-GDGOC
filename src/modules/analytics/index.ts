@@ -1,1 +1,1 @@
-export { default as AnalyticsContent } from "./analytics-content";
+export { default as AnalyticsContainer } from "./analytics-container";

@@ -42,7 +42,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             placeholder="Search candidates, jobs..."
-            className="pl-10 bg-gray-50 border-0 focus-visible:ring-1 focus-visible:ring-[#265BFF] focus-visible:ring-offset-0"
+            className="pl-10 bg-gray-100 border-0 focus-visible:ring-1 focus-visible:ring-[#265BFF] focus-visible:ring-offset-0"
           />
         </div>
       </div>

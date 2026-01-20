@@ -50,7 +50,18 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (profileError) {
-      console.error("Profile fetch error:", profileError.message);
+      if (profileError.code === "42703") {
+        return NextResponse.json(
+          {
+            status: true,
+            message:
+              "Data profil belum tersedia. Silakan lengkapi profil Anda.",
+            profile: false,
+          },
+          { status: 200 },
+        );
+      }
+      await supabase.auth.signOut();
       return NextResponse.json(
         {
           status: false,
@@ -60,21 +71,8 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-
-    if (!profile?.user_id) {
-      return NextResponse.json(
-        {
-          status: false,
-          message: "Data profil belum tersedia. Silakan lengkapi profil Anda.",
-          error: { auth: ["Profile data not found"] },
-          data,
-        },
-        { status: 403 },
-      );
-    }
-
     // Validasi jika akun tidak aktif
-    if (profile.is_active === false) {
+    if (profile?.is_active === false) {
       await supabase.auth.signOut();
       return NextResponse.json(
         {
@@ -82,7 +80,7 @@ export async function POST(request: Request) {
           message: "Akun Anda dinonaktifkan. Silakan hubungi admin.",
           error: { auth: ["Account is inactive"] },
         },
-        { status: 403 }, // Forbidden
+        { status: 403 },
       );
     }
 

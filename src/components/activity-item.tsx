@@ -1,7 +1,10 @@
-import { formatDistanceToNow } from "date-fns"
-import { id as localeId } from "date-fns/locale"
-import { LucideIcon, Users, Sparkles, Calendar, UserCircle } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+"use client";
+
+import { useState, useEffect } from "react";
+import { formatDistanceToNow } from "date-fns";
+import { id as localeId } from "date-fns/locale";
+import { LucideIcon, Users, Sparkles, Calendar, UserCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface ActivityItemProps {
   type: "user" | "ai" | "calendar" | "status"
@@ -37,9 +40,21 @@ export function ActivityItem({
   timestamp,
   aiPowered,
 }: ActivityItemProps) {
-  const Icon = iconMap[type]
-  const iconColor = iconColorMap[type]
-  const iconBg = iconBgMap[type]
+  const [timeAgo, setTimeAgo] = useState<string>(() => 
+    formatDistanceToNow(timestamp, { addSuffix: true, locale: localeId })
+  );
+  const Icon = iconMap[type];
+  const iconColor = iconColorMap[type];
+  const iconBg = iconBgMap[type];
+
+  useEffect(() => {
+    // Update time every minute
+    const interval = setInterval(() => {
+      setTimeAgo(formatDistanceToNow(timestamp, { addSuffix: true, locale: localeId }));
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [timestamp]);
 
   return (
     <div className="flex items-start gap-3 py-3">
@@ -50,8 +65,8 @@ export function ActivityItem({
         <p className="text-sm text-neutral-900 dark:text-neutral-100">
           {description}
         </p>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-          {formatDistanceToNow(timestamp, { addSuffix: true, locale: localeId })}
+        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1" suppressHydrationWarning>
+          {timeAgo}
         </p>
       </div>
       {aiPowered && (
@@ -60,5 +75,5 @@ export function ActivityItem({
         </Badge>
       )}
     </div>
-  )
+  );
 }

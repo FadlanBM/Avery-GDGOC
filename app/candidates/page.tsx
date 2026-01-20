@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { CandidatesContent } from "@/modules/candidates";
+import { CandidatesContainer } from "@/modules/candidates";
 
 export default async function CandidatesPage() {
   const supabase = await createClient();
@@ -12,5 +12,5 @@ export default async function CandidatesPage() {
     redirect("/login");
   }
 
-  return <CandidatesContent user={user} />;
+  return <CandidatesContainer user={user} />;
 }

@@ -17,7 +17,7 @@ export async function GET() {
           message: "Unauthorized: Silakan login terlebih dahulu",
           error: { auth: ["Session not found"] },
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -35,14 +35,34 @@ export async function GET() {
           message: "Unauthorized: Silakan login terlebih dahulu",
           error: { auth: [error?.message || "User not found"] },
         },
-        { status: 401 }
+        { status: 401 },
+      );
+    }
+
+    // Validasi Role Recruiter
+    const { data: roleData, error: roleError } = await supabase
+      .from("user_roles")
+      .select("roles(name)")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const userRole = (roleData?.roles as any)?.name;
+
+    if (roleError || userRole !== "recruiter") {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Forbidden: Anda tidak memiliki akses ke area recruiter",
+          error: { auth: ["Invalid role access"] },
+        },
+        { status: 403 },
       );
     }
 
     const { data: profile, error: profileError } = await supabase
       .from("hrd_employee_data")
       .select(
-        "user_id,fullname, gender, dateofbirth, address, position, is_active"
+        "user_id,fullname, gender, dateofbirth, address, position, is_active",
       )
       .eq("user_id", user.id)
       .maybeSingle();
@@ -54,7 +74,7 @@ export async function GET() {
           message: "Data profil belum tersedia. Silakan lengkapi profil Anda.",
           error: { auth: ["Profile data not found"] },
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -65,7 +85,7 @@ export async function GET() {
           message: "Unauthorized: Silakan login terlebih dahulu",
           error: { auth: [profileError || "User not found"] },
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -97,7 +117,7 @@ export async function GET() {
         message: "Internal Server Error",
         error: { server: [errorMessage] },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
