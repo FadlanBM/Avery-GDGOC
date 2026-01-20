@@ -10,6 +10,10 @@ const completeProfileSchema = z.object({
   }),
   last_education: z.string().uuid("ID tingkat pendidikan tidak valid"),
   address: z.string().min(1, "Alamat wajib diisi"),
+  phone: z
+    .string()
+    .min(10, "Nomor telepon minimal 10 digit")
+    .max(15, "Nomor telepon maksimal 15 digit"),
 });
 
 export async function POST(request: Request) {
@@ -72,7 +76,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { fullname, gender, dateofbirth, last_education, address } =
+    const { fullname, gender, dateofbirth, last_education, address, phone } =
       validation.data;
 
     // 4. Validate education_level exists
@@ -132,6 +136,7 @@ export async function POST(request: Request) {
       dateofbirth,
       last_education,
       address,
+      phone,
       is_active: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),

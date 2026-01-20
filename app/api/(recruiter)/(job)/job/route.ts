@@ -17,10 +17,12 @@ const jobSchema = z.object({
     .uuid("Format ID tingkat pendidikan tidak valid")
     .optional()
     .nullable(),
-  min_experience_years: z.number().int().nonnegative().optional().nullable(),
-  max_experience_years: z.number().int().nonnegative().optional().nullable(),
+  min_experience_year: z.number().int().nonnegative().optional().nullable(),
+  max_experience_year: z.number().int().nonnegative().optional().nullable(),
   no_experience_allowed: z.boolean().default(false),
-  status: z.enum(["draft", "published", "closed", "filled"]).default("draft"),
+  status: z
+    .enum(["draft", "published", "closed", "filled"])
+    .default("published"),
 });
 
 const jobUpdateSchema = jobSchema.partial();
@@ -38,15 +40,17 @@ export async function POST(request: Request) {
           message: "Unauthorized: Silakan login terlebih dahulu",
           error: { auth: ["Session not found"] },
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
+    console.log(session.user.id);
 
     const { data: profile, error: profileError } = await supabase
       .from("hrd_employee_data")
       .select("companie_id")
       .eq("user_id", session.user.id)
       .single();
+    console.log(profileError);
 
     if (profileError || !profile?.companie_id) {
       return NextResponse.json(
@@ -56,7 +60,7 @@ export async function POST(request: Request) {
             "Anda harus terhubung dengan perusahaan untuk membuat lowongan",
           error: { database: ["No companie_id found for this user"] },
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -72,7 +76,7 @@ export async function POST(request: Request) {
           message: firstErrorMessage,
           error: flattenedErrors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -83,7 +87,7 @@ export async function POST(request: Request) {
         {
           ...jobData,
           company_id: profile.companie_id,
-          created_by_user_id: session.user.id,
+          created_by: session.user.id,
           published_at:
             jobData.status === "published" ? new Date().toISOString() : null,
         },
@@ -99,7 +103,7 @@ export async function POST(request: Request) {
           message: "Gagal menyimpan lowongan pekerjaan",
           error: { database: [insertError.message] },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -118,7 +122,7 @@ export async function POST(request: Request) {
         message: "Internal Server Error",
         error: { server: [errorMessage] },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -138,7 +142,7 @@ export async function GET(request: Request) {
           message: "Unauthorized: Silakan login terlebih dahulu",
           error: { auth: ["Session not found"] },
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -164,17 +168,17 @@ export async function GET(request: Request) {
         status,
         created_at,
         description,
-        min_experience_years,
-        max_experience_years,
+        min_experience_year,
+        max_experience_year,
         no_experience_allowed,
         employment_status:employment_status_id(id, name),
         work_schedule:work_schedule_id(id, name),
         remote_status:remote_status_id(id, name),
         education_level:required_education_id(id, name)
       `,
-        { count: "exact" }
+        { count: "exact" },
       )
-      .eq("created_by_user_id", session.user.id)
+      .eq("created_by", session.user.id)
       .eq("status", "published")
       .order("created_at", { ascending: false })
       .range(from, to);
@@ -187,7 +191,7 @@ export async function GET(request: Request) {
           message: "Gagal mengambil daftar lowongan pekerjaan",
           error: { database: [error.message] },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -221,11 +225,11 @@ export async function GET(request: Request) {
         message: "Internal Server Error",
         error: { server: [errorMessage] },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-export async function PUT(request: Request) {
+export async function PATCH(request: Request) {
   try {
     const supabase = await createClient();
     const {
@@ -239,7 +243,7 @@ export async function PUT(request: Request) {
           message: "Unauthorized: Silakan login terlebih dahulu",
           error: { auth: ["Session not found"] },
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
     const { searchParams } = new URL(request.url);
@@ -252,7 +256,7 @@ export async function PUT(request: Request) {
           message: "ID lowongan tidak ditemukan di parameter",
           error: { params: ["ID is required"] },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -269,7 +273,7 @@ export async function PUT(request: Request) {
           message: firstErrorMessage,
           error: flattenedErrors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -280,11 +284,9 @@ export async function PUT(request: Request) {
       .from("job")
       .update({
         ...updateData,
-        published_at:
-          updateData.status === "published" ? new Date().toISOString() : null,
       })
       .eq("id", id)
-      .eq("created_by_user_id", session.user.id)
+      .eq("created_by", session.user.id)
       .select()
       .single();
 
@@ -297,7 +299,7 @@ export async function PUT(request: Request) {
             "Gagal memperbarui lowongan pekerjaan atau Anda tidak memiliki akses",
           error: { database: [error.message] },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -317,7 +319,7 @@ export async function PUT(request: Request) {
         message: "Internal Server Error",
         error: { server: [errorMessage] },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -328,6 +330,6 @@ export async function DELETE() {
       message: "Method DELETE tidak tersedia",
       error: { method: ["Not Allowed"] },
     },
-    { status: 405 }
+    { status: 405 },
   );
 }

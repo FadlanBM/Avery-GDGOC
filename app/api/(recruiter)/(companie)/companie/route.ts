@@ -18,7 +18,7 @@ export async function GET() {
           message: "Unauthorized: Silakan login terlebih dahulu",
           error: { auth: ["Session not found"] },
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -36,7 +36,7 @@ export async function GET() {
           message: "User belum terhubung dengan perusahaan manapun",
           error: { database: ["No companie_id found for this user"] },
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -56,7 +56,7 @@ export async function GET() {
             database: [companyError?.message || "Company record missing"],
           },
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -76,7 +76,7 @@ export async function GET() {
         message: "Internal Server Error",
         error: { server: [errorMessage] },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -127,9 +127,10 @@ export async function POST(request: Request) {
           message: "Unauthorized: Silakan login terlebih dahulu",
           error: { auth: ["Session not found"] },
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
+
     // 2. Cek apakah user sudah memiliki perusahaan
     const { data: profile, error: profileError } = await supabase
       .from("hrd_employee_data")
@@ -141,41 +142,56 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           status: false,
-          message: "Gagal memvalidasi data profil",
+          message: "Gagal mengambil data profil",
           error: { database: [profileError.message] },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const { data: companyDataFind, error: companyError } = await supabase
-      .from("companies")
-      .select("id")
-      .eq("id", profile?.companie_id)
-      .maybeSingle();
-
-    if (companyError) {
+    if (!profile) {
       return NextResponse.json(
         {
           status: false,
-          message: "Gagal memvalidasi data profil",
-          error: { database: [companyError.message] },
+          message: "Data profil belum tersedia. Silakan lengkapi profil Anda.",
+          profile: false,
         },
-        { status: 400 }
+        { status: 404 },
       );
     }
 
-    if (companyDataFind?.id) {
-      return NextResponse.json(
-        {
-          status: false,
-          message: "Anda sudah terdaftar dalam sebuah perusahaan",
-          error: { auth: ["User already has a company assigned"] },
-        },
-        { status: 400 }
-      );
+    // 3. Jika sudah ada companie_id, cek apakah perusahaannya benar-benar ada
+    if (profile.companie_id) {
+      const { data: companyDataFind, error: companyError } = await supabase
+        .from("companies")
+        .select("id")
+        .eq("id", profile.companie_id)
+        .maybeSingle();
+
+      if (companyDataFind) {
+        return NextResponse.json(
+          {
+            status: false,
+            message: "Anda sudah terdaftar dalam sebuah perusahaan",
+            error: { auth: ["User already has a company assigned"] },
+          },
+          { status: 400 },
+        );
+      }
+
+      if (companyError) {
+        return NextResponse.json(
+          {
+            status: false,
+            message: "Gagal memvalidasi data perusahaan",
+            error: { database: [companyError.message] },
+          },
+          { status: 400 },
+        );
+      }
     }
 
+    // 4. Proses pembuatan perusahaan baru
     const body = await request.json();
     const validation = companySchema.safeParse(body);
 
@@ -188,58 +204,61 @@ export async function POST(request: Request) {
           message: firstErrorMessage,
           error: flattenedErrors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const companyData = validation.data;
-    const { data, error } = await supabase
+    const { data: newCompany, error: createError } = await supabase
       .from("companies")
       .insert([
         {
           ...companyData,
           website_url:
-            companyData.website_url === "" ? null : companyData.website_url, // Ubah string kosong jadi null
+            companyData.website_url === "" ? null : companyData.website_url,
         },
       ])
       .select(
-        "id, name,industry,employee_count,location,description,website_url"
+        "id, name, industry, employee_count, location, description, website_url",
       )
       .single();
 
-    if (error) {
-      console.error("Error creating company:", error.message);
+    if (createError) {
+      console.error("Error creating company:", createError.message);
       return NextResponse.json(
         {
           status: false,
           message: "Gagal menyimpan data perusahaan",
-          error: { database: [error.message] },
+          error: { database: [createError.message] },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
+    // 5. Hubungkan perusahaan baru dengan profil HRD
     const { error: updateError } = await supabase
       .from("hrd_employee_data")
-      .update({ companie_id: data.id })
+      .update({ companie_id: newCompany.id })
       .eq("user_id", session.user.id);
 
     if (updateError) {
       console.error("Error updating hrd_employee_data:", updateError.message);
+      // Opsional: Hapus perusahaan yang baru dibuat jika gagal menghubungkan?
+      // Untuk sekarang kita return error saja
       return NextResponse.json(
         {
           status: false,
           message: "Gagal menghubungkan profil HRD dengan perusahaan",
           error: { database: [updateError.message] },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     return NextResponse.json({
       status: true,
       message: "Perusahaan berhasil dibuat",
-      data,
+      data: newCompany,
     });
   } catch (err) {
     console.error("Create company error:", err);
@@ -252,7 +271,7 @@ export async function POST(request: Request) {
         message: "Internal Server Error",
         error: { server: [errorMessage] },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -271,7 +290,7 @@ export async function PUT(request: Request) {
           message: "Unauthorized: Silakan login terlebih dahulu",
           error: { auth: ["Session not found"] },
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -289,7 +308,7 @@ export async function PUT(request: Request) {
           message: "User belum terhubung dengan perusahaan manapun",
           error: { database: ["No companie_id found for this user"] },
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -306,7 +325,7 @@ export async function PUT(request: Request) {
           message: firstErrorMessage,
           error: flattenedErrors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -330,7 +349,7 @@ export async function PUT(request: Request) {
           message: "Gagal memperbarui data perusahaan",
           error: { database: [error.message] },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -350,7 +369,7 @@ export async function PUT(request: Request) {
         message: "Internal Server Error",
         error: { server: [errorMessage] },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
