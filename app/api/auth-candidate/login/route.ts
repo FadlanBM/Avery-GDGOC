@@ -49,20 +49,31 @@ export async function POST(request: Request) {
       .eq("id", data.user.id)
       .maybeSingle();
 
-    if (!profile) {
+    if (profileError) {
+      if (profileError.code === "42703") {
+        return NextResponse.json(
+          {
+            status: true,
+            message:
+              "Data profil belum tersedia. Silakan lengkapi profil Anda.",
+            profile: false,
+          },
+          { status: 200 },
+        );
+      }
       await supabase.auth.signOut();
       return NextResponse.json(
         {
           status: false,
-          message: "Data profil belum tersedia. Silakan lengkapi profil Anda.",
-          error: { auth: ["Profile data not found"] },
+          message: "Gagal mengambil data profil",
+          error: { database: [profileError.message] },
         },
-        { status: 403 },
+        { status: 400 },
       );
     }
 
     // Validasi jika akun tidak aktif
-    if (profile.is_active === false) {
+    if (profile?.is_active === false) {
       await supabase.auth.signOut();
       return NextResponse.json(
         {

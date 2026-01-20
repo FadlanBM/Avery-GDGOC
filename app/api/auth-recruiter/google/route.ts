@@ -10,13 +10,15 @@ export async function GET(request: Request) {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${origin}/auth/callback?next=${next}`,
+      redirectTo: `${origin}/auth/callback?next=${next}&role=recruiter`,
     },
   });
 
   if (error) {
     console.error("OAuth error:", error.message);
-    return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error.message)}`);
+    return NextResponse.redirect(
+      `${origin}/login?error=${encodeURIComponent(error.message)}`,
+    );
   }
 
   if (data?.url) {
@@ -24,5 +26,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(data.url);
   }
 
-  return NextResponse.redirect(`${origin}/login?error=Could not initiate OAuth`);
+  return NextResponse.redirect(
+    `${origin}/login?error=Could not initiate OAuth`,
+  );
 }

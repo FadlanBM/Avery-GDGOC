@@ -15,7 +15,7 @@ export async function GET() {
           message: "Unauthorized: Silakan login terlebih dahulu",
           error: { auth: ["Session not found"] },
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -33,7 +33,27 @@ export async function GET() {
           message: "Unauthorized: Silakan login terlebih dahulu",
           error: { auth: [error?.message || "User not found"] },
         },
-        { status: 401 }
+        { status: 401 },
+      );
+    }
+
+    // Validasi Role Registrant
+    const { data: roleData, error: roleError } = await supabase
+      .from("user_roles")
+      .select("roles(name)")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const userRole = (roleData?.roles as any)?.name;
+
+    if (roleError || userRole !== "registrant") {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Forbidden: Anda tidak memiliki akses ke area candidate",
+          error: { auth: ["Invalid role access"] },
+        },
+        { status: 403 },
       );
     }
 
@@ -43,29 +63,39 @@ export async function GET() {
       .eq("id", user.id)
       .maybeSingle();
 
-    if (!profile) {
+    if (profileError) {
+      if (profileError.code === "42703") {
+        return NextResponse.json(
+          {
+            status: true,
+            message:
+              "Data profil belum tersedia. Silakan lengkapi profil Anda.",
+            profile: false,
+          },
+          { status: 200 },
+        );
+      }
       await supabase.auth.signOut();
       return NextResponse.json(
         {
           status: false,
-          message: "Data profil belum tersedia. Silakan lengkapi profil Anda.",
-          error: { auth: ["Profile data not found"] },
+          message: "Gagal mengambil data profil",
+          error: { database: [profileError.message] },
         },
-        { status: 403 }
+        { status: 400 },
       );
     }
 
     // Validasi jika akun tidak aktif
-    if (profile.is_active === false) {
+    if (profile?.is_active === false) {
       await supabase.auth.signOut();
-
       return NextResponse.json(
         {
           status: false,
           message: "Akun Anda dinonaktifkan. Silakan hubungi admin.",
           error: { auth: ["Account is inactive"] },
         },
-        { status: 403 } // Forbidden
+        { status: 403 },
       );
     }
 
@@ -76,14 +106,14 @@ export async function GET() {
       user: {
         id: user.id,
         email: user.email,
-        name: profile.full_name || user.user_metadata?.full_name || null,
+        name: profile?.full_name || user.user_metadata?.full_name || null,
         avatar: user.user_metadata?.avatar_url || null,
         last_sign_in: user.last_sign_in_at,
         profile: {
-          phone: profile.phone,
-          gender: profile.gender,
-          birth_date: profile.birth_date,
-          address: profile.address,
+          phone: profile?.phone,
+          gender: profile?.gender,
+          birth_date: profile?.birth_date,
+          address: profile?.address,
         },
       },
     });
@@ -98,7 +128,7 @@ export async function GET() {
         message: "Internal Server Error",
         error: { server: [errorMessage] },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

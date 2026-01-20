@@ -16,7 +16,9 @@ export async function updateSession(request: NextRequest) {
       !request.nextUrl.pathname.startsWith("/login") &&
       !request.nextUrl.pathname.startsWith("/register") &&
       !request.nextUrl.pathname.startsWith("/recruiter/login") &&
-      !request.nextUrl.pathname.startsWith("/recruiter/register")
+      !request.nextUrl.pathname.startsWith("/recruiter/register") &&
+      !request.nextUrl.pathname.startsWith("/complete-profile") &&
+      !request.nextUrl.pathname.startsWith("/recruiter/complete-profile")
     ) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
@@ -62,6 +64,8 @@ export async function updateSession(request: NextRequest) {
       !request.nextUrl.pathname.startsWith("/register") &&
       !request.nextUrl.pathname.startsWith("/recruiter/login") &&
       !request.nextUrl.pathname.startsWith("/recruiter/register") &&
+      !request.nextUrl.pathname.startsWith("/complete-profile") &&
+      !request.nextUrl.pathname.startsWith("/recruiter/complete-profile") &&
       !request.nextUrl.pathname.startsWith("/auth/callback")
     ) {
       const url = request.nextUrl.clone();
@@ -76,6 +80,8 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/register") &&
     !request.nextUrl.pathname.startsWith("/recruiter/login") &&
     !request.nextUrl.pathname.startsWith("/recruiter/register") &&
+    !request.nextUrl.pathname.startsWith("/complete-profile") &&
+    !request.nextUrl.pathname.startsWith("/recruiter/complete-profile") &&
     !request.nextUrl.pathname.startsWith("/auth/callback") &&
     !request.nextUrl.pathname.startsWith("/api/auth-recruiter/login") &&
     !request.nextUrl.pathname.startsWith("/api/auth-recruiter/register") &&
