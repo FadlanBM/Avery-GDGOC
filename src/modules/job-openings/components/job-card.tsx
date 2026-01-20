@@ -1,3 +1,6 @@
+"use client";
+
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,8 +21,13 @@ interface JobCardProps {
 }
 
 export function JobCard({ job }: JobCardProps) {
+  const router = useRouter();
+
   return (
-    <Card className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+    <Card 
+      className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+      onClick={() => router.push(`/job-openings/${job.id}`)}
+    >
       {/* Card Header with Menu */}
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1">
@@ -30,7 +38,15 @@ export function JobCard({ job }: JobCardProps) {
             {job.department}
           </p>
         </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-neutral-400 hover:text-neutral-600">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-8 w-8 text-neutral-400 hover:text-neutral-600"
+          onClick={(e) => {
+            e.stopPropagation();
+            // Add menu action here
+          }}
+        >
           <MoreVertical className="h-4 w-4" />
         </Button>
       </div>
