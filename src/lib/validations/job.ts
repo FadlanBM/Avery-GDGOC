@@ -11,18 +11,16 @@ export const jobFormSchema = z
     work_schedule_id: z.string().uuid("Work schedule is required"),
     remote_status_id: z.string().uuid("Remote status is required"),
     required_education_id: z.string().uuid().optional().nullable(),
-    min_experience_years: z
+    min_experience_year: z
       .number()
       .int()
       .nonnegative("Minimum experience cannot be negative")
-      .optional()
-      .nullable(),
-    max_experience_years: z
+      .default(0),
+    max_experience_year: z
       .number()
       .int()
       .nonnegative("Maximum experience cannot be negative")
-      .optional()
-      .nullable(),
+      .default(0),
     no_experience_allowed: z.boolean().default(false),
     status: z.enum(["draft", "published", "closed", "filled"]).default("published"),
   })

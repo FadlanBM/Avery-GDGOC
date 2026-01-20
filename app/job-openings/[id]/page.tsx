@@ -5,7 +5,7 @@ import { JobDetailContainer } from "@/modules/job-openings/job-detail";
 export default async function JobDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const supabase = await createClient();
 
@@ -23,5 +23,7 @@ export default async function JobDetailPage({
     user_metadata: session.user.user_metadata,
   };
 
-  return <JobDetailContainer user={user} jobId={params.id} />;
+  const { id } = await params;
+
+  return <JobDetailContainer user={user} jobId={id} />;
 }

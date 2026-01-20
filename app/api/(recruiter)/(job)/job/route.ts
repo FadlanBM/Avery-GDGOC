@@ -9,16 +9,18 @@ const jobSchema = z.object({
     .string()
     .uuid("Format ID status pekerjaan tidak valid")
     .optional()
-    .nullable(),
+    .nullable()
+    .or(z.literal("")),
   work_schedule_id: z.string().uuid("Format ID jadwal kerja tidak valid"),
   remote_status_id: z.string().uuid("Format ID status remote tidak valid"),
   required_education_id: z
     .string()
     .uuid("Format ID tingkat pendidikan tidak valid")
     .optional()
-    .nullable(),
-  min_experience_years: z.number().int().nonnegative().optional().nullable(),
-  max_experience_years: z.number().int().nonnegative().optional().nullable(),
+    .nullable()
+    .or(z.literal("")),
+  min_experience_year: z.number().int().nonnegative().default(0),
+  max_experience_year: z.number().int().nonnegative().default(0),
   no_experience_allowed: z.boolean().default(false),
   status: z.enum(["draft", "published", "closed", "filled"]).default("draft"),
 });
@@ -26,12 +28,17 @@ const jobSchema = z.object({
 const jobUpdateSchema = jobSchema.partial();
 
 export async function POST(request: Request) {
+  console.log("=== POST /api/job started ===");
   try {
     const supabase = await createClient();
     const {
       data: { session },
     } = await supabase.auth.getSession();
+    
+    console.log("Session check:", session ? "Logged in" : "Not logged in");
+    
     if (!session) {
+      console.log("Returning 401: No session");
       return NextResponse.json(
         {
           status: false,
@@ -42,13 +49,18 @@ export async function POST(request: Request) {
       );
     }
 
+    console.log("Checking profile for user:", session.user.id);
     const { data: profile, error: profileError } = await supabase
       .from("hrd_employee_data")
       .select("companie_id")
       .eq("user_id", session.user.id)
       .single();
 
+    console.log("Profile data:", profile);
+    console.log("Profile error:", profileError);
+
     if (profileError || !profile?.companie_id) {
+      console.log("Returning 403: No company connection");
       return NextResponse.json(
         {
           status: false,
@@ -60,10 +72,26 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+      console.log("Received job data:", JSON.stringify(body, null, 2));
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Invalid JSON data",
+          error: { parse: ["Failed to parse request body"] },
+        },
+        { status: 400 }
+      );
+    }
+    
     const validation = jobSchema.safeParse(body);
 
     if (!validation.success) {
+      console.error("Validation errors:", JSON.stringify(validation.error.issues, null, 2));
       const flattenedErrors = validation.error.flatten().fieldErrors;
       const firstErrorMessage = validation.error.issues[0].message;
       return NextResponse.json(
@@ -77,45 +105,68 @@ export async function POST(request: Request) {
     }
 
     const jobData = validation.data;
+    
+    // Transform empty strings to null for optional UUID fields
+    // Set default values for experience fields (database requires NOT NULL)
+    const cleanedJobData = {
+      ...jobData,
+      employment_status_id: jobData.employment_status_id === "" ? null : jobData.employment_status_id,
+      required_education_id: jobData.required_education_id === "" ? null : jobData.required_education_id,
+      min_experience_year: jobData.min_experience_year ?? 0,
+      max_experience_year: jobData.max_experience_year ?? 0,
+    };
+
+    console.log("Inserting job with data:", JSON.stringify({
+      ...cleanedJobData,
+      company_id: profile.companie_id,
+      created_by: session.user.id,
+    }, null, 2));
+
     const { data, error: insertError } = await supabase
       .from("job")
       .insert([
         {
-          ...jobData,
+          ...cleanedJobData,
           company_id: profile.companie_id,
-          created_by_user_id: session.user.id,
+          created_by: session.user.id,
           published_at:
-            jobData.status === "published" ? new Date().toISOString() : null,
+            cleanedJobData.status === "published" ? new Date().toISOString() : null,
         },
       ])
       .select()
       .single();
 
     if (insertError) {
-      console.error("Error creating job:", insertError.message);
+      console.error("Database insert error:", JSON.stringify(insertError, null, 2));
       return NextResponse.json(
         {
           status: false,
-          message: "Gagal menyimpan lowongan pekerjaan",
-          error: { database: [insertError.message] },
+          message: "Gagal menyimpan lowongan pekerjaan: " + insertError.message,
+          error: { database: [insertError.message, insertError.hint, insertError.details].filter(Boolean) },
         },
         { status: 400 }
       );
     }
 
+    console.log("Job created successfully:", data);
     return NextResponse.json({
       status: true,
       message: "Lowongan pekerjaan berhasil dibuat",
       data,
     });
   } catch (err) {
-    console.error("Create job error:", err);
+    console.error("=== Create job error ===");
+    console.error("Error type:", err?.constructor?.name);
+    console.error("Error message:", err instanceof Error ? err.message : String(err));
+    console.error("Error stack:", err instanceof Error ? err.stack : "No stack");
+    console.error("Full error:", err);
+    
     const errorMessage =
       err instanceof Error ? err.message : "Terjadi kesalahan internal server";
     return NextResponse.json(
       {
         status: false,
-        message: "Internal Server Error",
+        message: "Internal Server Error: " + errorMessage,
         error: { server: [errorMessage] },
       },
       { status: 500 }
@@ -155,7 +206,10 @@ export async function GET(request: Request) {
     const from = (currentPage - 1) * currentLimit;
     const to = from + currentLimit - 1;
 
-    const { data, error, count } = await supabase
+    // Get status filter from query params (optional)
+    const statusFilter = searchParams.get("status"); // published, draft, closed, filled
+
+    let query = supabase
       .from("job")
       .select(
         `
@@ -164,8 +218,8 @@ export async function GET(request: Request) {
         status,
         created_at,
         description,
-        min_experience_years,
-        max_experience_years,
+        min_experience_year,
+        max_experience_year,
         no_experience_allowed,
         employment_status:employment_status_id(id, name),
         work_schedule:work_schedule_id(id, name),
@@ -174,8 +228,14 @@ export async function GET(request: Request) {
       `,
         { count: "exact" }
       )
-      .eq("created_by_user_id", session.user.id)
-      .eq("status", "published")
+      .eq("created_by", session.user.id);
+
+    // Apply status filter only if provided
+    if (statusFilter && ["draft", "published", "closed", "filled"].includes(statusFilter)) {
+      query = query.eq("status", statusFilter);
+    }
+
+    const { data, error, count } = await query
       .order("created_at", { ascending: false })
       .range(from, to);
 
@@ -284,7 +344,7 @@ export async function PUT(request: Request) {
           updateData.status === "published" ? new Date().toISOString() : null,
       })
       .eq("id", id)
-      .eq("created_by_user_id", session.user.id)
+      .eq("created_by", session.user.id)
       .select()
       .single();
 

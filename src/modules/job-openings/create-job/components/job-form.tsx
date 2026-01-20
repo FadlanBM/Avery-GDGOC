@@ -100,8 +100,8 @@ export function JobForm() {
         work_schedule_id: workScheduleId,
         remote_status_id: remoteStatusId,
         required_education_id: requiredEducationId || null,
-        min_experience_years: minExperienceYears ? parseInt(minExperienceYears) : null,
-        max_experience_years: maxExperienceYears ? parseInt(maxExperienceYears) : null,
+        min_experience_year: minExperienceYears ? parseInt(minExperienceYears) : 0,
+        max_experience_year: maxExperienceYears ? parseInt(maxExperienceYears) : 0,
         no_experience_allowed: noExperienceAllowed,
         status: "published",
       };
@@ -109,8 +109,12 @@ export function JobForm() {
       // Validate with Zod schema
       const validatedData = jobFormSchema.parse(formData);
 
+      console.log("Sending job data to API:", validatedData);
+
       // Submit to API
       const response = await axios.post("/api/job", validatedData);
+
+      console.log("API Response:", response.data);
 
       if (response.data.status) {
         router.push("/job-openings");
@@ -118,6 +122,7 @@ export function JobForm() {
         setError(response.data.message || "Failed to create job opening");
       }
     } catch (err: unknown) {
+      console.error("Submit error:", err);
       if (err && typeof err === 'object' && 'name' in err && err.name === "ZodError" && 'errors' in err) {
         // Handle Zod validation errors
         const errors: Record<string, string> = {};
@@ -128,7 +133,11 @@ export function JobForm() {
         });
         setValidationErrors(errors);
       } else if (axios.isAxiosError(err)) {
+        console.error("Axios error details:", err.response?.data);
         setError(err.response?.data?.message || "Failed to create job opening");
+        if (err.response?.data?.error) {
+          console.error("Backend validation errors:", err.response.data.error);
+        }
       } else {
         setError("An error occurred. Please try again.");
       }
