@@ -115,11 +115,6 @@ export default function JobOpeningsContainer({ user }: JobOpeningsContainerProps
     setCurrentPage(page);
   };
 
-  const handleJobCreated = () => {
-    // Refresh job list - in the future this will refetch data from API
-    setCurrentPage(1);
-  };
-
   return (
     <div className="flex min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
       <DashboardSidebar />
@@ -132,7 +127,6 @@ export default function JobOpeningsContainer({ user }: JobOpeningsContainerProps
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={handlePageChange}
-          onJobCreated={handleJobCreated}
         />
       </div>
     </div>
