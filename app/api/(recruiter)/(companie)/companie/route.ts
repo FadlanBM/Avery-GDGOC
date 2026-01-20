@@ -138,6 +138,7 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (profileError) {
+      console.error("Error fetching profile:", profileError);
       return NextResponse.json(
         {
           status: false,
@@ -148,32 +149,48 @@ export async function POST(request: Request) {
       );
     }
 
-    const { data: companyDataFind, error: companyError } = await supabase
-      .from("companies")
-      .select("id")
-      .eq("id", profile?.companie_id)
-      .maybeSingle();
-
-    if (companyError) {
+    // Jika profile tidak ditemukan, user belum mengisi biodata
+    if (!profile) {
       return NextResponse.json(
         {
           status: false,
-          message: "Gagal memvalidasi data profil",
-          error: { database: [companyError.message] },
+          message: "Silakan lengkapi biodata recruiter terlebih dahulu",
+          error: { profile: ["Profile not found. Please complete step 1 first."] },
         },
         { status: 400 }
       );
     }
 
-    if (companyDataFind?.id) {
-      return NextResponse.json(
-        {
-          status: false,
-          message: "Anda sudah terdaftar dalam sebuah perusahaan",
-          error: { auth: ["User already has a company assigned"] },
-        },
-        { status: 400 }
-      );
+    // Jika sudah punya companie_id, cek apakah perusahaan sudah ada
+    if (profile.companie_id) {
+      const { data: companyDataFind, error: companyError } = await supabase
+        .from("companies")
+        .select("id")
+        .eq("id", profile.companie_id)
+        .maybeSingle();
+
+      if (companyError) {
+        console.error("Error checking company:", companyError);
+        return NextResponse.json(
+          {
+            status: false,
+            message: "Gagal memvalidasi data perusahaan",
+            error: { database: [companyError.message] },
+          },
+          { status: 400 }
+        );
+      }
+
+      if (companyDataFind?.id) {
+        return NextResponse.json(
+          {
+            status: false,
+            message: "Anda sudah terdaftar dalam sebuah perusahaan",
+            error: { auth: ["User already has a company assigned"] },
+          },
+          { status: 400 }
+        );
+      }
     }
 
     const body = await request.json();

@@ -31,11 +31,16 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
+    console.log("Received body:", body);
+    console.log("User ID:", session.user.id);
+    
     const validation = employeeSchema.safeParse(body);
 
     if (!validation.success) {
       const flattenedErrors = validation.error.flatten().fieldErrors;
       const firstErrorMessage = validation.error.issues[0].message;
+      
+      console.error("Validation failed:", validation.error.issues);
 
       return NextResponse.json(
         {
@@ -50,31 +55,44 @@ export async function POST(request: Request) {
     const { fullname, gender, dateofbirth, address, position, is_active } =
       validation.data;
 
+    console.log("Processing data for user:", session.user.id);
+
+    // Gunakan UPSERT (insert or update) untuk menghindari duplicate key error
     const { data, error } = await supabase
       .from("hrd_employee_data")
-      .insert({
-        user_id: session.user.id,
-        fullname,
-        gender,
-        dateofbirth,
-        address,
-        position,
-        is_active: typeof is_active === "boolean" ? is_active : true,
-        created_at: new Date().toISOString(),
-      })
+      .upsert(
+        {
+          user_id: session.user.id,
+          fullname,
+          gender,
+          dateofbirth,
+          address,
+          position,
+          is_active: typeof is_active === "boolean" ? is_active : true,
+          created_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "user_id", // Primary key
+          ignoreDuplicates: false, // Update jika sudah ada
+        }
+      )
       .select("fullname, gender, dateofbirth, address, position, is_active")
       .single();
 
     if (error) {
+      console.error("Error upserting employee data:", error);
+      console.error("Error details:", JSON.stringify(error, null, 2));
       return NextResponse.json(
         {
           status: false,
-          message: "Gagal menyimpan data karyawan HRD",
+          message: `Gagal menyimpan data karyawan HRD: ${error.message}`,
           error: { database: [error.message] },
         },
         { status: 400 }
       );
     }
+
+    console.log("Upsert successful:", data);
 
     return NextResponse.json({
       status: true,
