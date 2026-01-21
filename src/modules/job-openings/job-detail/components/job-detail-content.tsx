@@ -6,7 +6,7 @@ import axios from "axios";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, Clock, Briefcase, GraduationCap, Calendar, Building, User, Loader2, XCircle } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Briefcase, GraduationCap, Calendar, Building, User, Loader2, XCircle, CheckCircle2, DollarSign, ExternalLink } from "lucide-react";
 
 interface Job {
   id: string;
@@ -112,198 +112,172 @@ export function JobDetailContent({ jobId }: JobDetailContentProps) {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="max-w-7xl mx-auto">
+      {/* Header - Back Button & Status */}
+      <div className="flex items-center justify-between mb-6">
         <Button
           variant="ghost"
           onClick={() => router.back()}
-          className="gap-2"
+          className="gap-2 -ml-4"
         >
           <ArrowLeft className="h-4 w-4" />
           Back
         </Button>
 
-        <div className="flex items-center gap-3">
-          <Badge
-            className={`${
-              job.status === "published"
-                ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-                : job.status === "closed"
-                ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
-                : "bg-neutral-100 text-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
-            } border-0`}
+        {job.status !== "closed" && (
+          <Button
+            size="sm"
+            onClick={handleCloseJob}
+            disabled={closing}
+            className="gap-2 bg-transparent text-red-500 hover:bg-red-50 hover:text-red-600 border border-red-500 hover:border-red-600"
           >
-            {job.status}
-          </Badge>
-
-          {job.status !== "closed" && (
-            <Button
-              variant="destructive"
-              onClick={handleCloseJob}
-              disabled={closing}
-              className="gap-2"
-            >
-              {closing ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Closing...
-                </>
-              ) : (
-                <>
-                  <XCircle className="h-4 w-4" />
-                  Close Job
-                </>
-              )}
-            </Button>
-          )}
-        </div>
+            {closing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Closing...
+              </>
+            ) : (
+              <>
+                <XCircle className="h-4 w-4" />
+                Close Job
+              </>
+            )}
+          </Button>
+        )}
       </div>
 
-      {/* Job Title & Company */}
-      <Card className="p-6">
-        <div className="space-y-4">
-          <div>
-            <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-50 mb-2">
+      {/* Main Content Card */}
+      <Card className="border-0 shadow-sm bg-white dark:bg-neutral-800">
+        <div className="p-8 space-y-6">
+          {/* Job Title */}
+          <div className="border-b pb-6 ">
+            <h1 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-50 mb-2">
               {job.title}
             </h1>
+
+            {/* Company Name with View all jobs link */}
             {job.companie && (
-              <div className="flex items-center text-neutral-600 dark:text-neutral-400">
-                <Building className="h-5 w-5 mr-2" />
-                <span className="text-lg">{job.companie.name}</span>
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {job.remote_status && (
-              <div className="flex items-center text-sm">
-                <MapPin className="h-4 w-4 mr-2 text-neutral-500" />
-                <span>{job.remote_status.name}</span>
-              </div>
-            )}
-
-            {job.work_schedule && (
-              <div className="flex items-center text-sm">
-                <Clock className="h-4 w-4 mr-2 text-neutral-500" />
-                <span>{job.work_schedule.name}</span>
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-neutral-700 dark:text-neutral-300 font-medium">
+                  {job.companie.name}
+                </span>
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <Button
+                  variant="link"
+                  className="text-blue-600 hover:text-blue-700 p-0 h-auto font-normal text-sm"
+                  onClick={() => router.push("/job-openings")}
+                >
+                  View all jobs
+                </Button>
               </div>
             )}
 
-            {job.employment_status && (
-              <div className="flex items-center text-sm">
-                <Briefcase className="h-4 w-4 mr-2 text-neutral-500" />
-                <span>{job.employment_status.name}</span>
+            {/* Location & Job Details */}
+            <div className="space-y-2 mb-4">
+              {job.remote_status && (
+                <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
+                  <MapPin className="h-4 w-4" />
+                  <span className="text-sm">{job.remote_status.name}</span>
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center gap-2">
+                {job.employment_status && (
+                  <Badge variant="secondary" className="rounded-full bg-neutral-100 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-300 border-0 font-normal">
+                    {job.employment_status.name}
+                  </Badge>
+                )}
+                {job.work_schedule && (
+                  <Badge variant="secondary" className="rounded-full bg-neutral-100 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-300 border-0 font-normal">
+                    {job.work_schedule.name}
+                  </Badge>
+                )}
               </div>
-            )}
-
-            {job.education_level && (
-              <div className="flex items-center text-sm">
-                <GraduationCap className="h-4 w-4 mr-2 text-neutral-500" />
-                <span>{job.education_level.name}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </Card>
-
-      {/* Job Description */}
-      <Card className="p-6">
-        <h2 className="text-xl font-semibold mb-4">Job Description</h2>
-        <div className="prose dark:prose-invert max-w-none">
-          <p className="whitespace-pre-wrap text-neutral-700 dark:text-neutral-300">
-            {job.description}
-          </p>
-        </div>
-      </Card>
-
-      {/* Requirements */}
-      <Card className="p-6">
-        <h2 className="text-xl font-semibold mb-4">Requirements</h2>
-        <div className="space-y-3">
-          <div>
-            <span className="font-medium text-neutral-700 dark:text-neutral-300">
-              Experience Level:{" "}
-            </span>
-            <span className="text-neutral-600 dark:text-neutral-400">
-              {job.no_experience_allowed
-                ? "No experience required"
-                : job.min_experience_year === job.max_experience_year
-                ? `${job.min_experience_year} years`
-                : `${job.min_experience_year}-${job.max_experience_year} years`}
-            </span>
-          </div>
-
-          {job.education_level && (
-            <div>
-              <span className="font-medium text-neutral-700 dark:text-neutral-300">
-                Education:{" "}
-              </span>
-              <span className="text-neutral-600 dark:text-neutral-400">
-                {job.education_level.name}
-              </span>
             </div>
-          )}
-        </div>
-      </Card>
 
-      {/* Job Meta */}
-      <Card className="p-6">
-        <h2 className="text-xl font-semibold mb-4">Job Information</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <span className="font-medium text-neutral-700 dark:text-neutral-300">
-              Posted:{" "}
-            </span>
-            <span className="text-neutral-600 dark:text-neutral-400">
-              {new Date(job.created_at).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </span>
-          </div>
-
-          {job.published_at && (
-            <div>
-              <span className="font-medium text-neutral-700 dark:text-neutral-300">
-                Published:{" "}
-              </span>
-              <span className="text-neutral-600 dark:text-neutral-400">
-                {new Date(job.published_at).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
+            {/* Posted Time & Status Badge */}
+            <div className="flex items-center gap-3 mt-4">
+              <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                Posted {new Date(job.created_at).toLocaleDateString("en-US", {
                   day: "numeric",
-                })}
+                  month: "short",
+                })} ago
               </span>
+              <Badge
+                className={`${
+                  job.status === "published"
+                    ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                    : job.status === "closed"
+                    ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
+                    : "bg-neutral-100 text-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
+                } border-0 font-normal`}
+              >
+                {job.status}
+              </Badge>
+            </div>
+          </div>
+
+          {/* Job Description */}
+          <div className="space-y-4">
+            <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed whitespace-pre-wrap">
+              {job.description}
+            </p>
+          </div>
+
+          {/* Requirements Section */}
+          {(job.min_experience_year > 0 || job.education_level) && (
+            <div className="space-y-3">
+              <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+                Requirements:
+              </h2>
+              <ul className="space-y-2 list-none">
+                {!job.no_experience_allowed && (
+                  <li className="flex items-start gap-2 text-neutral-700 dark:text-neutral-300">
+                    <span className="text-neutral-400 dark:text-neutral-500 mt-1">•</span>
+                    <span>
+                      {job.min_experience_year === job.max_experience_year
+                        ? `This is an on-site, ${job.min_experience_year} year${job.min_experience_year > 1 ? 's' : ''} experience position`
+                        : `This is an on-site, ${job.min_experience_year}-${job.max_experience_year} years experience position`}
+                    </span>
+                  </li>
+                )}
+                {job.education_level && (
+                  <li className="flex items-start gap-2 text-neutral-700 dark:text-neutral-300">
+                    <span className="text-neutral-400 dark:text-neutral-500 mt-1">•</span>
+                    <span>
+                      Preferably {job.education_level.name} Degree/Bachelor Degree from Linguistics/Translation/Language major
+                    </span>
+                  </li>
+                )}
+              </ul>
             </div>
           )}
 
-          {job.updated_at && (
-            <div>
-              <span className="font-medium text-neutral-700 dark:text-neutral-300">
-                Last Updated:{" "}
-              </span>
-              <span className="text-neutral-600 dark:text-neutral-400">
-                {new Date(job.updated_at).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </span>
+          {/* Additional Job Information */}
+          <div className="pt-6 border-t space-y-3 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {job.published_at && (
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-neutral-400" />
+                  <span className="text-neutral-600 dark:text-neutral-400">
+                    Published: {new Date(job.published_at).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
+                </div>
+              )}
+              {job.education_level && (
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="h-4 w-4 text-neutral-400" />
+                  <span className="text-neutral-600 dark:text-neutral-400">
+                    {job.education_level.name}
+                  </span>
+                </div>
+              )}
             </div>
-          )}
-
-          {job.created_by && (
-            <div>
-              <span className="font-medium text-neutral-700 dark:text-neutral-300">
-                Posted By:{" "}
-              </span>
-              <span className="text-neutral-600 dark:text-neutral-400">
-                {job.created_by.email}
-              </span>
-            </div>
-          )}
+          </div>
         </div>
       </Card>
     </div>

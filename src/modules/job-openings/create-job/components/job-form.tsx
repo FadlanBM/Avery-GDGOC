@@ -151,7 +151,7 @@ export function JobForm() {
   const canSubmit = !loading && !fetchingData && !isRequiredDropdownEmpty;
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-6">
         <Button
