@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronDown, XCircle, Users } from "lucide-react";
 import { CandidatesTable } from "./candidates-table";
 import { Pagination } from "@/components/pagination";
+import { CandidateDetailDrawer } from "./candidate-detail-drawer";
 
 interface Candidate {
   id: string;
@@ -37,6 +39,19 @@ export function Drawer({
   onPageChange,
   onRetry,
 }: DrawerProps) {
+  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const handleCandidateClick = (candidate: Candidate) => {
+    setSelectedCandidate(candidate);
+    setIsDrawerOpen(true);
+  };
+
+  const handleCloseDrawer = () => {
+    setIsDrawerOpen(false);
+    setSelectedCandidate(null);
+  };
+
   if (loading) {
     return (
       <main className="flex-1 p-8 mt-16">
@@ -114,7 +129,7 @@ export function Drawer({
 
         {/* Table Card */}
         <Card className="border-0 shadow-sm bg-white dark:bg-neutral-800">
-          <CandidatesTable candidates={candidates} />
+          <CandidatesTable candidates={candidates} onCandidateClick={handleCandidateClick} />
         </Card>
 
         {/* Pagination */}
@@ -129,6 +144,13 @@ export function Drawer({
             />
           </div>
         )}
+
+        {/* Candidate Detail Drawer */}
+        <CandidateDetailDrawer
+          candidate={selectedCandidate}
+          isOpen={isDrawerOpen}
+          onClose={handleCloseDrawer}
+        />
       </div>
     </main>
   );

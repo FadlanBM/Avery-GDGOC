@@ -17,9 +17,10 @@ interface Candidate {
 
 interface CandidatesTableProps {
   candidates: Candidate[];
+  onCandidateClick: (candidate: Candidate) => void;
 }
 
-export function CandidatesTable({ candidates }: CandidatesTableProps) {
+export function CandidatesTable({ candidates, onCandidateClick }: CandidatesTableProps) {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case "interview":
@@ -51,7 +52,7 @@ export function CandidatesTable({ candidates }: CandidatesTableProps) {
   };
 
   const handleRowClick = (candidate: Candidate) => {
-    console.log("Candidate detail - will implement after design reference:", candidate);
+    onCandidateClick(candidate);
   };
 
   return (
@@ -91,16 +92,13 @@ export function CandidatesTable({ candidates }: CandidatesTableProps) {
                 {/* Candidate Column */}
                 <td className="py-4 px-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-amber-100">
-
-                    </div>
-                    {/* <Image
+                    <Image
                       src={`https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.name)}&background=265BFF&color=fff&size=40`}
                       alt={candidate.name}
                       width={40}
                       height={40}
                       className="w-10 h-10 rounded-full"
-                    /> */}
+                    />
                     <div>
                       <div className="font-medium text-neutral-900 dark:text-neutral-50">
                         {candidate.name}
@@ -165,16 +163,13 @@ export function CandidatesTable({ candidates }: CandidatesTableProps) {
             className="p-4 cursor-pointer hover:shadow-md transition-shadow"
           >
             <div className="flex items-start gap-3 mb-3">
-              <div className="w-10 h-10 rounded-full bg-amber-100">
-
-                    </div>
-                    {/* <Image
-                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.name)}&background=265BFF&color=fff&size=40`}
-                      alt={candidate.name}
-                      width={40}
-                      height={40}
-                      className="w-10 h-10 rounded-full"
-                    /> */}
+              <Image
+                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.name)}&background=265BFF&color=fff&size=48`}
+                alt={candidate.name}
+                width={48}
+                height={48}
+                className="w-12 h-12 rounded-full"
+              />
               <div className="flex-1">
                 <div className="font-medium text-neutral-900 dark:text-neutral-50 mb-1">
                   {candidate.name}
