@@ -44,7 +44,6 @@ export default function JobOpeningsContainer({ user }: JobOpeningsContainerProps
       setLoading(true);
       setError(null);
       const response = await axios.get(`/api/job?page=${currentPage}&limit=${itemsPerPage}`);
-      console.log("API Response:", response.data);
       setJobs(response.data.data || []);
       setTotalPages(response.data.totalPages || 1);
     } catch (err: any) {

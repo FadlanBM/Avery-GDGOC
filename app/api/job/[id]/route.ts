@@ -5,8 +5,6 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  console.log("=== GET /api/job/[id] called ===");
-  console.log("Request URL:", request.url);
   
   try {
     const supabase = await createClient();
@@ -15,7 +13,6 @@ export async function GET(
       data: { session },
     } = await supabase.auth.getSession();
 
-    console.log("Session check:", session ? "Logged in" : "Not logged in");
 
     if (!session) {
       return NextResponse.json(
@@ -29,7 +26,6 @@ export async function GET(
     }
 
     const { id } = await params;
-    console.log("Job ID:", id);
 
     // Fetch job with all related data
     const { data, error } = await supabase

@@ -55,14 +55,6 @@ export default function RecruiterCompleteProfilePage() {
     setLoading(true);
 
     try {
-      console.log("Sending data:", {
-        fullname,
-        gender: Boolean(gender),
-        dateofbirth,
-        address,
-        position,
-      });
-
       const response = await axios.post("/api/auth-recruiter/hrd-employee", {
         fullname,
         gender: Boolean(gender),
@@ -71,7 +63,6 @@ export default function RecruiterCompleteProfilePage() {
         position,
       });
 
-      console.log("Response:", response.data);
 
       if (response.status === 200) {
         setSuccess("Biodata recruiter berhasil disimpan! Lanjut ke data perusahaan.");

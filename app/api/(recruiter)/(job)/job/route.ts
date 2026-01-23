@@ -28,14 +28,12 @@ const jobSchema = z.object({
 const jobUpdateSchema = jobSchema.partial();
 
 export async function POST(request: Request) {
-  console.log("=== POST /api/job started ===");
   try {
     const supabase = await createClient();
     const {
       data: { session },
     } = await supabase.auth.getSession();
     
-    console.log("Session check:", session ? "Logged in" : "Not logged in");
     
     if (!session) {
       console.log("Returning 401: No session");
@@ -49,15 +47,12 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log("Checking profile for user:", session.user.id);
     const { data: profile, error: profileError } = await supabase
       .from("hrd_employee_data")
       .select("companie_id")
       .eq("user_id", session.user.id)
       .single();
 
-    console.log("Profile data:", profile);
-    console.log("Profile error:", profileError);
 
     if (profileError || !profile?.companie_id) {
       console.log("Returning 403: No company connection");
@@ -75,7 +70,6 @@ export async function POST(request: Request) {
     let body;
     try {
       body = await request.json();
-      console.log("Received job data:", JSON.stringify(body, null, 2));
     } catch (parseError) {
       console.error("JSON parse error:", parseError);
       return NextResponse.json(
@@ -116,11 +110,6 @@ export async function POST(request: Request) {
       max_experience_year: jobData.max_experience_year ?? 0,
     };
 
-    console.log("Inserting job with data:", JSON.stringify({
-      ...cleanedJobData,
-      company_id: profile.companie_id,
-      created_by: session.user.id,
-    }, null, 2));
 
     const { data, error: insertError } = await supabase
       .from("job")
@@ -148,7 +137,6 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log("Job created successfully:", data);
     return NextResponse.json({
       status: true,
       message: "Lowongan pekerjaan berhasil dibuat",

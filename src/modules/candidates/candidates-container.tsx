@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import axios from "axios";
 import DashboardSidebar from "@/components/dashboard-sidebar";
 import DashboardHeader from "@/components/dashboard-header";
@@ -29,6 +30,9 @@ interface Candidate {
 }
 
 export default function CandidatesContainer({ user }: CandidatesContainerProps) {
+  const searchParams = useSearchParams();
+  const statusFilter = searchParams?.get("status") || "";
+  
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,10 +45,25 @@ export default function CandidatesContainer({ user }: CandidatesContainerProps) 
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get(`/api/candidates?page=${currentPage}&limit=${itemsPerPage}`);
+      
+      let url = `/api/candidates?page=${currentPage}&limit=${itemsPerPage}`;
+      if (statusFilter) {
+        url += `&status=${statusFilter}`;
+      }
+      
+      const response = await axios.get(url);
       
       if (response.data.status) {
-        setCandidates(response.data.data || []);
+        let fetchedCandidates = response.data.data || [];
+        
+        // Client-side filtering if API doesn't support status filter
+        if (statusFilter && fetchedCandidates.length > 0) {
+          fetchedCandidates = fetchedCandidates.filter(
+            (c: Candidate) => c.status.toLowerCase() === statusFilter.toLowerCase()
+          );
+        }
+        
+        setCandidates(fetchedCandidates);
         setTotalPages(response.data.pagination?.totalPages || 1);
         setTotalCandidates(response.data.pagination?.totalCandidates || 0);
       } else {
@@ -60,7 +79,7 @@ export default function CandidatesContainer({ user }: CandidatesContainerProps) 
 
   useEffect(() => {
     fetchCandidates();
-  }, [currentPage]);
+  }, [currentPage, statusFilter]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -84,6 +103,7 @@ export default function CandidatesContainer({ user }: CandidatesContainerProps) 
           currentPage={currentPage}
           totalPages={totalPages}
           totalCandidates={totalCandidates}
+          statusFilter={statusFilter}
           onPageChange={handlePageChange}
           onRetry={handleRetry}
         />

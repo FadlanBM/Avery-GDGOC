@@ -31,9 +31,6 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    console.log("Received body:", body);
-    console.log("User ID:", session.user.id);
-    
     const validation = employeeSchema.safeParse(body);
 
     if (!validation.success) {
@@ -54,8 +51,6 @@ export async function POST(request: Request) {
 
     const { fullname, gender, dateofbirth, address, position, is_active } =
       validation.data;
-
-    console.log("Processing data for user:", session.user.id);
 
     // Gunakan UPSERT (insert or update) untuk menghindari duplicate key error
     const { data, error } = await supabase

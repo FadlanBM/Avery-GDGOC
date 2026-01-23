@@ -109,12 +109,10 @@ export function JobForm() {
       // Validate with Zod schema
       const validatedData = jobFormSchema.parse(formData);
 
-      console.log("Sending job data to API:", validatedData);
 
       // Submit to API
       const response = await axios.post("/api/job", validatedData);
 
-      console.log("API Response:", response.data);
 
       if (response.data.status) {
         router.push("/job-openings");

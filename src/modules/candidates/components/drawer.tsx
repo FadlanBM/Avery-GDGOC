@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronDown, XCircle, Users } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ChevronDown, XCircle, Users, X } from "lucide-react";
 import { CandidatesTable } from "./candidates-table";
 import { Pagination } from "@/components/pagination";
 import { CandidateDetailDrawer } from "./candidate-detail-drawer";
@@ -25,6 +26,7 @@ interface DrawerProps {
   currentPage: number;
   totalPages: number;
   totalCandidates: number;
+  statusFilter?: string;
   onPageChange: (page: number) => void;
   onRetry: () => void;
 }
@@ -36,6 +38,7 @@ export function Drawer({
   currentPage,
   totalPages,
   totalCandidates,
+  statusFilter,
   onPageChange,
   onRetry,
 }: DrawerProps) {
@@ -50,6 +53,21 @@ export function Drawer({
   const handleCloseDrawer = () => {
     setIsDrawerOpen(false);
     setSelectedCandidate(null);
+  };
+
+  const handleClearFilter = () => {
+    window.location.href = "/candidates";
+  };
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      applied: "Applied",
+      screening: "Screening",
+      interview: "Interview",
+      offer: "Offer",
+      hired: "Hired",
+    };
+    return labels[status.toLowerCase()] || status;
   };
 
   if (loading) {
@@ -125,6 +143,20 @@ export function Drawer({
               <ChevronDown className="h-4 w-4" />
             </Button>
           </div>
+          
+          {/* Status Filter Badge */}
+          {statusFilter && (
+            <div className="mt-4 flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Filtered by:</span>
+              <Badge variant="secondary" className="flex items-center gap-2">
+                {getStatusLabel(statusFilter)}
+                <X 
+                  className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                  onClick={handleClearFilter}
+                />
+              </Badge>
+            </div>
+          )}
         </div>
 
         {/* Table Card */}
