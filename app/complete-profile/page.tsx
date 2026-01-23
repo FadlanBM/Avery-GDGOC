@@ -28,6 +28,7 @@ export default function CandidateCompleteProfilePage() {
   const [dateofbirth, setDateofbirth] = useState("");
   const [lastEducation, setLastEducation] = useState("");
   const [address, setAddress] = useState("");
+  const [phone, setPhone] = useState("");
   const [educationLevels, setEducationLevels] = useState<EducationLevel[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -70,13 +71,17 @@ export default function CandidateCompleteProfilePage() {
     setLoading(true);
 
     try {
-      const response = await axios.post("/api/auth-candidate/complete-profile", {
-        fullname,
-        gender: Boolean(gender),
-        dateofbirth,
-        last_education: lastEducation,
-        address,
-      });
+      const response = await axios.post(
+        "/api/auth-candidate/complete-profile",
+        {
+          fullname,
+          gender: Boolean(gender),
+          dateofbirth,
+          last_education: lastEducation,
+          address,
+          phone,
+        },
+      );
 
       if (response.data.status) {
         setSuccess("Profil candidate berhasil dilengkapi!");
@@ -194,6 +199,19 @@ export default function CandidateCompleteProfilePage() {
                 placeholder="Masukkan alamat lengkap"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">Nomor Telepon</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="Contoh: 081234567890"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 required
                 disabled={loading}
               />

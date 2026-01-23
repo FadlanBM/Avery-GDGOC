@@ -45,8 +45,8 @@ export async function POST(request: Request) {
 
     const { data: profile, error: profileError } = await supabase
       .from("candidate")
-      .select("email, phone, gender, birth_date, address, is_active")
-      .eq("id", data.user.id)
+      .select("phone, gender, dateofbirth, address, is_active")
+      .eq("user_id", data.user.id)
       .maybeSingle();
 
     if (profileError) {
