@@ -182,7 +182,7 @@ export function CandidateDetailDrawer({ candidate, isOpen, onClose }: CandidateD
                 <Badge
                   key={skill}
                   variant="secondary"
-                  className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 border-0 px-3 py-1"
+                  className="bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300 border-0 px-3 py-1"
                 >
                   {skill}
                 </Badge>
@@ -190,47 +190,55 @@ export function CandidateDetailDrawer({ candidate, isOpen, onClose }: CandidateD
             </div>
           </div>
 
-          {/* Why They Fit */}
-          <Card className="p-4 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-            <h3 className="font-semibold text-green-900 dark:text-green-100 flex items-center gap-2 mb-3">
-              <CheckCircle2 className="h-4 w-4" />
-              Why They Fit
-            </h3>
-            <ul className="space-y-2">
-              {candidateDetails.whyTheyFit.map((item, index) => (
-                <li
-                  key={index}
-                  className="flex items-start gap-2 text-sm text-green-800 dark:text-green-200"
-                >
-                  <span className="text-green-600 dark:text-green-400 mt-0.5"></span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </Card>
+          {/* Why They Fit & Missing Requirements */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Why They Fit */}
+            <Card className="p-4 bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700">
+              <h3 className="font-semibold text-green-600 dark:text-green-400 flex items-center gap-2 mb-3">
+                <CheckCircle2 className="h-5 w-5" />
+                Why They Fit
+              </h3>
+              <ul className="space-y-2">
+                {candidateDetails.whyTheyFit.map((item, index) => (
+                  <li
+                    key={index}
+                    className="flex items-start gap-2 text-sm text-neutral-700 dark:text-neutral-300"
+                  >
+                    <span className="text-green-600 dark:text-green-400 mt-0.5">•</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
 
-          {/* Missing Requirements */}
-          <Card className="p-4 bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800">
-            <h3 className="font-semibold text-orange-900 dark:text-orange-100 flex items-center gap-2 mb-3">
-              <AlertCircle className="h-4 w-4" />
-              Missing Requirements
-            </h3>
-            <ul className="space-y-2">
-              {candidateDetails.missingRequirements.map((item, index) => (
-                <li
-                  key={index}
-                  className="flex items-start gap-2 text-sm text-orange-800 dark:text-orange-200"
-                >
-                  <span className="text-orange-600 dark:text-orange-400 mt-0.5"></span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </Card>
+            {/* Missing Requirements */}
+            <Card className="p-4 bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700">
+              <h3 className="font-semibold text-orange-600 dark:text-orange-400 flex items-center gap-2 mb-3">
+                <AlertCircle className="h-5 w-5" />
+                Missing Requirements
+              </h3>
+              <ul className="space-y-2">
+                {candidateDetails.missingRequirements.map((item, index) => (
+                  <li
+                    key={index}
+                    className="flex items-start gap-2 text-sm text-neutral-700 dark:text-neutral-300"
+                  >
+                    <span className="text-orange-600 dark:text-orange-400 mt-0.5">•</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          </div>
 
           {/* Schedule Interview Button */}
           <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white gap-2">
-            <FileText className="h-4 w-4" />
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" strokeWidth="2" />
+              <line x1="16" y1="2" x2="16" y2="6" strokeWidth="2" />
+              <line x1="8" y1="2" x2="8" y2="6" strokeWidth="2" />
+              <line x1="3" y1="10" x2="21" y2="10" strokeWidth="2" />
+            </svg>
             Schedule Interview
           </Button>
         </div>
