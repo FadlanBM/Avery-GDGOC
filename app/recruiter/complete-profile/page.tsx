@@ -19,7 +19,6 @@ import { AlertCircle, CheckCircle2 } from "lucide-react";
 export default function RecruiterCompleteProfilePage() {
   const router = useRouter();
   const [fullname, setFullname] = useState("");
-  const [companieId, setCompanieId] = useState("");
   const [gender, setGender] = useState<boolean | "">("");
   const [dateofbirth, setDateofbirth] = useState("");
   const [address, setAddress] = useState("");
@@ -43,7 +42,6 @@ export default function RecruiterCompleteProfilePage() {
     try {
       const response = await axios.post("/api/auth-recruiter/hrd-employee", {
         fullname,
-        companie_id: companieId,
         gender: Boolean(gender),
         dateofbirth,
         address,
@@ -102,18 +100,6 @@ export default function RecruiterCompleteProfilePage() {
                 placeholder="Masukkan nama lengkap"
                 value={fullname}
                 onChange={(e) => setFullname(e.target.value)}
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="companieId">ID Perusahaan (UUID)</Label>
-              <Input
-                id="companieId"
-                placeholder="Masukkan UUID Perusahaan"
-                value={companieId}
-                onChange={(e) => setCompanieId(e.target.value)}
                 required
                 disabled={loading}
               />
