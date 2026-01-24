@@ -5,6 +5,21 @@ export async function GET() {
   try {
     const supabase = await createClient();
 
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Unauthorized: Silakan login terlebih dahulu",
+          error: { auth: ["Session not found"] },
+        },
+        { status: 401 },
+      );
+    }
+
     const { data, error } = await supabase
       .from("education_level")
       .select("id,name")

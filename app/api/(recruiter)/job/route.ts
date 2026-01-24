@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { validateUserRole } from "@/lib/validations/auth-check";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -9,16 +10,18 @@ const jobSchema = z.object({
     .string()
     .uuid("Format ID status pekerjaan tidak valid")
     .optional()
-    .nullable(),
+    .nullable()
+    .or(z.literal("")),
   work_schedule_id: z.string().uuid("Format ID jadwal kerja tidak valid"),
   remote_status_id: z.string().uuid("Format ID status remote tidak valid"),
   required_education_id: z
     .string()
     .uuid("Format ID tingkat pendidikan tidak valid")
     .optional()
-    .nullable(),
-  min_experience_year: z.number().int().nonnegative().optional().nullable(),
-  max_experience_year: z.number().int().nonnegative().optional().nullable(),
+    .nullable()
+    .or(z.literal("")),
+  min_experience_year: z.number().int().nonnegative().default(0),
+  max_experience_year: z.number().int().nonnegative().default(0),
   no_experience_allowed: z.boolean().default(false),
   status: z
     .enum(["draft", "published", "closed", "filled"])
@@ -33,7 +36,30 @@ export async function POST(request: Request) {
     const {
       data: { session },
     } = await supabase.auth.getSession();
+
     if (!session) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Unauthorized: Please login first",
+          error: { auth: ["Session not found"] },
+        },
+        { status: 401 },
+      );
+    }
+
+    const roleValidation = await validateUserRole(
+      supabase,
+      session?.user?.id,
+      "recruiter",
+    );
+
+    if (!roleValidation.isValid) {
+      return roleValidation.response;
+    }
+
+    if (!session) {
+      console.log("Returning 401: No session");
       return NextResponse.json(
         {
           status: false,
@@ -43,7 +69,6 @@ export async function POST(request: Request) {
         { status: 401 },
       );
     }
-    console.log(session.user.id);
 
     const { data: profile, error: profileError } = await supabase
       .from("hrd_employee_data")
@@ -53,6 +78,7 @@ export async function POST(request: Request) {
     console.log(profileError);
 
     if (profileError || !profile?.companie_id) {
+      console.log("Returning 403: No company connection");
       return NextResponse.json(
         {
           status: false,
@@ -64,10 +90,28 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Invalid JSON data",
+          error: { parse: ["Failed to parse request body"] },
+        },
+        { status: 400 },
+      );
+    }
+
     const validation = jobSchema.safeParse(body);
 
     if (!validation.success) {
+      console.error(
+        "Validation errors:",
+        JSON.stringify(validation.error.issues, null, 2),
+      );
       const flattenedErrors = validation.error.flatten().fieldErrors;
       const firstErrorMessage = validation.error.issues[0].message;
       return NextResponse.json(
@@ -81,27 +125,55 @@ export async function POST(request: Request) {
     }
 
     const jobData = validation.data;
+
+    // Transform empty strings to null for optional UUID fields
+    // Set default values for experience fields (database requires NOT NULL)
+    const cleanedJobData = {
+      ...jobData,
+      employment_status_id:
+        jobData.employment_status_id === ""
+          ? null
+          : jobData.employment_status_id,
+      required_education_id:
+        jobData.required_education_id === ""
+          ? null
+          : jobData.required_education_id,
+      min_experience_year: jobData.min_experience_year ?? 0,
+      max_experience_year: jobData.max_experience_year ?? 0,
+    };
+
     const { data, error: insertError } = await supabase
       .from("job")
       .insert([
         {
-          ...jobData,
+          ...cleanedJobData,
           company_id: profile.companie_id,
           created_by: session.user.id,
           published_at:
-            jobData.status === "published" ? new Date().toISOString() : null,
+            cleanedJobData.status === "published"
+              ? new Date().toISOString()
+              : null,
         },
       ])
       .select()
       .single();
 
     if (insertError) {
-      console.error("Error creating job:", insertError.message);
+      console.error(
+        "Database insert error:",
+        JSON.stringify(insertError, null, 2),
+      );
       return NextResponse.json(
         {
           status: false,
-          message: "Gagal menyimpan lowongan pekerjaan",
-          error: { database: [insertError.message] },
+          message: "Gagal menyimpan lowongan pekerjaan: " + insertError.message,
+          error: {
+            database: [
+              insertError.message,
+              insertError.hint,
+              insertError.details,
+            ].filter(Boolean),
+          },
         },
         { status: 400 },
       );
@@ -113,13 +185,24 @@ export async function POST(request: Request) {
       data,
     });
   } catch (err) {
-    console.error("Create job error:", err);
+    console.error("=== Create job error ===");
+    console.error("Error type:", err?.constructor?.name);
+    console.error(
+      "Error message:",
+      err instanceof Error ? err.message : String(err),
+    );
+    console.error(
+      "Error stack:",
+      err instanceof Error ? err.stack : "No stack",
+    );
+    console.error("Full error:", err);
+
     const errorMessage =
       err instanceof Error ? err.message : "Terjadi kesalahan internal server";
     return NextResponse.json(
       {
         status: false,
-        message: "Internal Server Error",
+        message: "Internal Server Error: " + errorMessage,
         error: { server: [errorMessage] },
       },
       { status: 500 },
@@ -146,6 +229,16 @@ export async function GET(request: Request) {
       );
     }
 
+    const roleValidation = await validateUserRole(
+      supabase,
+      session?.user?.id,
+      "recruiter",
+    );
+
+    if (!roleValidation.isValid) {
+      return roleValidation.response;
+    }
+
     // Ambil parameter pagination dari URL
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
@@ -159,7 +252,10 @@ export async function GET(request: Request) {
     const from = (currentPage - 1) * currentLimit;
     const to = from + currentLimit - 1;
 
-    const { data, error, count } = await supabase
+    // Get status filter from query params (optional)
+    const statusFilter = searchParams.get("status"); // published, draft, closed, filled
+
+    let query = supabase
       .from("job")
       .select(
         `
@@ -178,8 +274,17 @@ export async function GET(request: Request) {
       `,
         { count: "exact" },
       )
-      .eq("created_by", session.user.id)
-      .eq("status", "published")
+      .eq("created_by", session.user.id);
+
+    // Apply status filter only if provided
+    if (
+      statusFilter &&
+      ["draft", "published", "closed", "filled"].includes(statusFilter)
+    ) {
+      query = query.eq("status", statusFilter);
+    }
+
+    const { data, error, count } = await query
       .order("created_at", { ascending: false })
       .range(from, to);
 
@@ -229,6 +334,7 @@ export async function GET(request: Request) {
     );
   }
 }
+
 export async function PATCH(request: Request) {
   try {
     const supabase = await createClient();
@@ -245,6 +351,15 @@ export async function PATCH(request: Request) {
         },
         { status: 401 },
       );
+    }
+    const roleValidation = await validateUserRole(
+      supabase,
+      session?.user?.id,
+      "recruiter",
+    );
+
+    if (!roleValidation.isValid) {
+      return roleValidation.response;
     }
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");

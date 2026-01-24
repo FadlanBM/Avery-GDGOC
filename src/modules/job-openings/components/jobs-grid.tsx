@@ -1,13 +1,17 @@
 import { JobCard } from "./job-card";
 
 interface Job {
-  id: number;
+  id: string;
   title: string;
-  department: string;
-  location: string;
-  type: string;
-  applicants: number;
   status: string;
+  work_schedule: { id: number; name: string };
+  remote_status: { id: number; name: string };
+  employment_status: { id: number; name: string };
+  education_level: { id: number; name: string };
+  min_experience_year: number;
+  max_experience_year: number;
+  no_experience_allowed: boolean;
+  created_at: string;
 }
 
 interface JobsGridProps {

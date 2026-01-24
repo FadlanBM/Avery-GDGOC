@@ -1,16 +1,23 @@
+"use client";
+
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Clock, Users, MoreVertical } from "lucide-react";
 
 interface Job {
-  id: number;
+  id: string;
   title: string;
-  department: string;
-  location: string;
-  type: string;
-  applicants: number;
   status: string;
+  work_schedule: { id: number; name: string };
+  remote_status: { id: number; name: string };
+  employment_status: { id: number; name: string };
+  education_level: { id: number; name: string };
+  min_experience_year: number;
+  max_experience_year: number;
+  no_experience_allowed: boolean;
+  created_at: string;
 }
 
 interface JobCardProps {
@@ -18,8 +25,13 @@ interface JobCardProps {
 }
 
 export function JobCard({ job }: JobCardProps) {
+  const router = useRouter();
+
   return (
-    <Card className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+    <Card 
+      className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+      onClick={() => router.push(`/job-openings/${job.id}`)}
+    >
       {/* Card Header with Menu */}
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1">
@@ -27,10 +39,18 @@ export function JobCard({ job }: JobCardProps) {
             {job.title}
           </h3>
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
-            {job.department}
+            {job.education_level?.name || "No education requirement"}
           </p>
         </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-neutral-400 hover:text-neutral-600">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-8 w-8 text-neutral-400 hover:text-neutral-600"
+          onClick={(e) => {
+            e.stopPropagation();
+            // Add menu action here
+          }}
+        >
           <MoreVertical className="h-4 w-4" />
         </Button>
       </div>
@@ -39,24 +59,32 @@ export function JobCard({ job }: JobCardProps) {
       <div className="space-y-2 mb-4">
         <div className="flex items-center text-sm text-neutral-600 dark:text-neutral-400">
           <MapPin className="h-4 w-4 mr-2" />
-          {job.location}
+          {job.remote_status?.name || "Not specified"}
         </div>
         <div className="flex items-center text-sm text-neutral-600 dark:text-neutral-400">
           <Clock className="h-4 w-4 mr-2" />
-          {job.type}
+          {job.work_schedule?.name || "Not specified"}
         </div>
       </div>
 
-      {/* Footer with Applicants and Status */}
+      {/* Footer with Experience and Status */}
       <div className="flex items-center justify-between pt-4 border-t border-neutral-200 dark:border-neutral-700">
         <div className="flex items-center text-sm text-neutral-600 dark:text-neutral-400">
           <Users className="h-4 w-4 mr-1.5" />
-          <span className="font-medium">{job.applicants} applicants</span>
+          <span className="font-medium">
+            {job.no_experience_allowed 
+              ? "No experience required" 
+              : job.min_experience_year > 0 
+              ? `${job.min_experience_year}+ years` 
+              : job.employment_status?.name || "Not specified"}
+          </span>
         </div>
         <Badge 
           className={`${
-            job.status === "Active" 
+            job.status === "published" 
               ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" 
+              : job.status === "closed" 
+              ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
               : "bg-neutral-100 text-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
           } border-0`}
         >

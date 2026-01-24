@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { validateUserRole } from "@/lib/validations/auth-check";
 
 const completeProfileSchema = z.object({
   fullname: z.string().min(1, "Nama lengkap wajib diisi"),
@@ -38,24 +39,14 @@ export async function POST(request: Request) {
     }
 
     // 2. Validate Role (Must be registrant)
-    const { data: roleData, error: roleError } = await supabase
-      .from("user_roles")
-      .select("roles(name)")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const roleValidation = await validateUserRole(
+      supabase,
+      user.id,
+      "registrant",
+    );
 
-    const userRole = (roleData?.roles as any)?.name;
-
-    if (roleError || userRole !== "registrant") {
-      return NextResponse.json(
-        {
-          status: false,
-          message:
-            "Forbidden: Anda tidak memiliki akses untuk melengkapi data candidate",
-          error: { auth: ["Invalid role access"] },
-        },
-        { status: 403 },
-      );
+    if (!roleValidation.isValid) {
+      return roleValidation.response;
     }
 
     // 3. Validate Request Body

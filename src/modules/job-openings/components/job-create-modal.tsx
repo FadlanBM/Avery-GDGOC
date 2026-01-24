@@ -60,7 +60,9 @@ export function JobCreateModal({
 
   // Dropdown data state
   const [educationLevels, setEducationLevels] = useState<DropdownOption[]>([]);
-  const [employmentStatuses, setEmploymentStatuses] = useState<DropdownOption[]>([]);
+  const [employmentStatuses, setEmploymentStatuses] = useState<
+    DropdownOption[]
+  >([]);
   const [remoteStatuses, setRemoteStatuses] = useState<DropdownOption[]>([]);
   const [workSchedules, setWorkSchedules] = useState<DropdownOption[]>([]);
 
@@ -68,7 +70,9 @@ export function JobCreateModal({
   const [loading, setLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
 
   // Fetch dropdown data when modal opens
   useEffect(() => {
@@ -82,12 +86,13 @@ export function JobCreateModal({
     setError(null);
 
     try {
-      const [educationRes, employmentRes, remoteRes, scheduleRes] = await Promise.all([
-        axios.get<SubDataResponse>("/api/education"),
-        axios.get<SubDataResponse>("/api/employment-status"),
-        axios.get<SubDataResponse>("/api/remote-status"),
-        axios.get<SubDataResponse>("/api/workschedule"),
-      ]);
+      const [educationRes, employmentRes, remoteRes, scheduleRes] =
+        await Promise.all([
+          axios.get<SubDataResponse>("/api/education"),
+          axios.get<SubDataResponse>("/api/employment-status"),
+          axios.get<SubDataResponse>("/api/remote-status"),
+          axios.get<SubDataResponse>("/api/workschedule"),
+        ]);
 
       setEducationLevels(educationRes.data.data || []);
       setEmploymentStatuses(employmentRes.data.data || []);
@@ -130,8 +135,12 @@ export function JobCreateModal({
         work_schedule_id: workScheduleId,
         remote_status_id: remoteStatusId,
         required_education_id: requiredEducationId || null,
-        min_experience_years: minExperienceYears ? parseInt(minExperienceYears) : null,
-        max_experience_years: maxExperienceYears ? parseInt(maxExperienceYears) : null,
+        min_experience_year: minExperienceYears
+          ? parseInt(minExperienceYears)
+          : 0,
+        max_experience_year: maxExperienceYears
+          ? parseInt(maxExperienceYears)
+          : 0,
         no_experience_allowed: noExperienceAllowed,
         status: "published",
       };
@@ -152,10 +161,18 @@ export function JobCreateModal({
         setError(response.data.message || "Failed to create job opening");
       }
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'name' in err && err.name === "ZodError" && 'errors' in err) {
+      if (
+        err &&
+        typeof err === "object" &&
+        "name" in err &&
+        err.name === "ZodError" &&
+        "errors" in err
+      ) {
         // Handle Zod validation errors
         const errors: Record<string, string> = {};
-        const zodError = err as unknown as { errors: Array<{ path: Array<string | number>; message: string }> };
+        const zodError = err as unknown as {
+          errors: Array<{ path: Array<string | number>; message: string }>;
+        };
         zodError.errors.forEach((error) => {
           const path = error.path.join(".");
           errors[path] = error.message;
@@ -172,7 +189,8 @@ export function JobCreateModal({
   };
 
   // Check if required dropdowns are empty
-  const isRequiredDropdownEmpty = workSchedules.length === 0 || remoteStatuses.length === 0;
+  const isRequiredDropdownEmpty =
+    workSchedules.length === 0 || remoteStatuses.length === 0;
   const canSubmit = !loading && !fetchingData && !isRequiredDropdownEmpty;
 
   return (
@@ -217,7 +235,9 @@ export function JobCreateModal({
               disabled={loading || fetchingData}
             />
             {validationErrors.title && (
-              <p className="text-sm text-destructive">{validationErrors.title}</p>
+              <p className="text-sm text-destructive">
+                {validationErrors.title}
+              </p>
             )}
           </div>
 
@@ -235,7 +255,9 @@ export function JobCreateModal({
               className="min-h-30"
             />
             {validationErrors.description && (
-              <p className="text-sm text-destructive">{validationErrors.description}</p>
+              <p className="text-sm text-destructive">
+                {validationErrors.description}
+              </p>
             )}
           </div>
 
@@ -265,7 +287,9 @@ export function JobCreateModal({
               </Select>
             )}
             {validationErrors.work_schedule_id && (
-              <p className="text-sm text-destructive">{validationErrors.work_schedule_id}</p>
+              <p className="text-sm text-destructive">
+                {validationErrors.work_schedule_id}
+              </p>
             )}
           </div>
 
@@ -295,7 +319,9 @@ export function JobCreateModal({
               </Select>
             )}
             {validationErrors.remote_status_id && (
-              <p className="text-sm text-destructive">{validationErrors.remote_status_id}</p>
+              <p className="text-sm text-destructive">
+                {validationErrors.remote_status_id}
+              </p>
             )}
           </div>
 
@@ -385,7 +411,9 @@ export function JobCreateModal({
                 disabled={loading || fetchingData || noExperienceAllowed}
               />
               {validationErrors.min_experience_years && (
-                <p className="text-sm text-destructive">{validationErrors.min_experience_years}</p>
+                <p className="text-sm text-destructive">
+                  {validationErrors.min_experience_years}
+                </p>
               )}
             </div>
 
@@ -401,7 +429,9 @@ export function JobCreateModal({
                 disabled={loading || fetchingData || noExperienceAllowed}
               />
               {validationErrors.max_experience_years && (
-                <p className="text-sm text-destructive">{validationErrors.max_experience_years}</p>
+                <p className="text-sm text-destructive">
+                  {validationErrors.max_experience_years}
+                </p>
               )}
             </div>
           </div>
