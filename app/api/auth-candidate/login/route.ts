@@ -50,17 +50,6 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (profileError) {
-      if (profileError.code === "42703") {
-        return NextResponse.json(
-          {
-            status: true,
-            message:
-              "Data profil belum tersedia. Silakan lengkapi profil Anda.",
-            profile: false,
-          },
-          { status: 200 },
-        );
-      }
       await supabase.auth.signOut();
       return NextResponse.json(
         {
@@ -69,6 +58,17 @@ export async function POST(request: Request) {
           error: { database: [profileError.message] },
         },
         { status: 400 },
+      );
+    }
+
+    if (profile === null) {
+      return NextResponse.json(
+        {
+          status: true,
+          message: "Data profil belum tersedia. Silakan lengkapi profil Anda.",
+          profile: false,
+        },
+        { status: 200 },
       );
     }
 

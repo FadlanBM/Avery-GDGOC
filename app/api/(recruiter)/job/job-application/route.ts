@@ -23,28 +23,38 @@ export async function GET(request: Request) {
       );
     }
 
-    // 2. Role Check (Must be registrant)
-    const roleValidation = await validateUserRole(
-      supabase,
-      user.id,
-      "registrant",
-    );
+    // 2. Role Check (Must be recruiter or admin)
+    const roleValidation = await validateUserRole(supabase, user.id, [
+      "recruiter",
+      "admin",
+    ]);
     if (!roleValidation.isValid) {
       return roleValidation.response;
     }
 
-    // 3. Get Pagination Params
+    // 3. Get Params
     const { searchParams } = new URL(request.url);
+    const job_id = searchParams.get("job_id");
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const status = searchParams.get("status");
+
+    if (!job_id) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Job ID is required",
+          error: { job_id: ["Job ID is missing"] },
+        },
+        { status: 400 },
+      );
+    }
 
     const currentPage = Math.max(1, page);
     const currentLimit = Math.max(1, Math.min(limit, 100));
     const from = (currentPage - 1) * currentLimit;
     const to = from + currentLimit - 1;
 
-    // 4. Query Job Applications with Relations
     let query = supabase
       .from("job_applications")
       .select(
@@ -54,25 +64,13 @@ export async function GET(request: Request) {
         applied_at,
         created_at,
         updated_at,
-        job:job_id (
-          id,
-          title,
-          description,
-          status,
-          min_experience_year,
-          max_experience_year,
-          no_experience_allowed,
-          employment_status:employment_status_id(id, name),
-          work_schedule:work_schedule_id(id, name),
-          remote_status:remote_status_id(id, name),
-          education_level:required_education_id(id, name),
-          companie:company_id(id, name)
-        )
+        user_id
       `,
         { count: "exact" },
       )
-      .eq("user_id", user.id);
+      .eq("job_id", job_id);
 
+    // Filter by status if provided
     if (status) {
       query = query.eq("status", status);
     }
@@ -86,20 +84,57 @@ export async function GET(request: Request) {
       return NextResponse.json(
         {
           status: false,
-          message: "Gagal mengambil daftar lamaran kerja",
+          message: "Gagal mengambil daftar pelamar",
           error: { database: [error.message] },
         },
         { status: 400 },
       );
     }
 
+    // 5. Fetch Candidate Profiles Manually
+    const userIds = data?.map((app) => app.user_id) || [];
+
+    let candidatesMap = new Map();
+
+    if (userIds.length > 0) {
+      const { data: candidates, error: candidateError } = await supabase
+        .from("candidate")
+        .select(
+          `
+           user_id,
+           fullname,
+           gender,
+           dateofbirth,
+           address,
+           education_level:last_education(
+            id,
+            name
+           )
+        `,
+        )
+        .eq("user_id", userIds);
+
+      if (!candidateError && candidates) {
+        candidates.forEach((c) => candidatesMap.set(c.user_id, c));
+      }
+    }
+
+    const transformedData = data?.map((app) => {
+      const candidateProfile = candidatesMap.get(app.user_id) || null;
+
+      return {
+        ...app,
+        candidate: candidateProfile,
+      };
+    });
+
     const totalItems = count || 0;
     const totalPages = Math.ceil(totalItems / currentLimit);
 
     return NextResponse.json({
       status: true,
-      message: "Daftar lamaran kerja berhasil diambil",
-      data: data || [],
+      message: "Daftar pelamar berhasil diambil",
+      data: transformedData || [],
       pagination: {
         page: currentPage,
         limit: currentLimit,
@@ -108,7 +143,7 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    console.error("Get job applications error:", error);
+    console.error("Get job applicants error:", error);
     const errorMessage =
       error instanceof Error ? error.message : "Internal Server Error";
     return NextResponse.json(
