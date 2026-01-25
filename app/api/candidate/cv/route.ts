@@ -24,7 +24,6 @@ export async function POST(request: Request) {
     // 2. Parse FormData
     const formData = await request.formData();
     const file = formData.get("file") as File;
-    const isPrimary = formData.get("is_primary") === "true";
 
     if (!file) {
       return NextResponse.json(
@@ -110,24 +109,22 @@ export async function POST(request: Request) {
 
     // 7. Insert into candidate_cv table
     // Jika is_primary true, hapus CV lama yang primary (GANTIKAN)
-    if (isPrimary) {
-      const { data: oldPrimary } = await supabase
-        .from("candidate_cv")
-        .select("asset_id, assets!inner(storage_path)")
-        .eq("user_id", session.user.id)
-        .eq("is_primary", true)
-        .maybeSingle();
+    const { data: oldPrimary } = await supabase
+      .from("candidate_cv")
+      .select("asset_id, assets!inner(storage_path)")
+      .eq("user_id", session.user.id)
+      .eq("is_primary", true)
+      .maybeSingle();
 
-      if (oldPrimary) {
-        // Hapus file fisik lama
-        const oldAssetPath = (oldPrimary.assets as any).storage_path;
-        if (oldAssetPath) {
-          await supabase.storage.from("assets").remove([oldAssetPath]);
-        }
-
-        // Hapus record asset lama (akan otomatis menghapus data di candidate_cv karena CASCADE)
-        await supabase.from("assets").delete().eq("id", oldPrimary.asset_id);
+    if (oldPrimary) {
+      // Hapus file fisik lama
+      const oldAssetPath = (oldPrimary.assets as any).storage_path;
+      if (oldAssetPath) {
+        await supabase.storage.from("assets").remove([oldAssetPath]);
       }
+
+      // Hapus record asset lama (akan otomatis menghapus data di candidate_cv karena CASCADE)
+      await supabase.from("assets").delete().eq("id", oldPrimary.asset_id);
     }
 
     const cvId = crypto.randomUUID();
@@ -135,7 +132,7 @@ export async function POST(request: Request) {
       id: cvId,
       user_id: session.user.id,
       asset_id: assetId,
-      is_primary: isPrimary,
+      is_primary: true,
       created_at: currentTime,
       updated_at: currentTime,
     });
@@ -161,7 +158,6 @@ export async function POST(request: Request) {
       data: {
         cv_id: cvId,
         public_url: publicUrl,
-        is_primary: isPrimary,
       },
     });
   } catch (error) {
