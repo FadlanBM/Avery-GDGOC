@@ -7,7 +7,10 @@ const paramsSchema = z.object({
   id: z.string().uuid("ID Lamaran tidak valid"),
 });
 
-export async function PATCH({ params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   try {
     const supabase = await createClient();
     const {

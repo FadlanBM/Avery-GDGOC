@@ -158,7 +158,8 @@ export async function PATCH(
       return NextResponse.json(
         {
           status: false,
-          message: "Data pengalaman kerja tidak ditemukan atau Anda tidak memiliki akses",
+          message:
+            "Data pengalaman kerja tidak ditemukan atau Anda tidak memiliki akses",
         },
         { status: 404 },
       );
@@ -182,7 +183,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {

@@ -113,6 +113,18 @@ export async function GET(
       .eq("user_id", data?.user_id)
       .maybeSingle();
 
+    if (candidateError) {
+      console.error("Error fetching job applications:", candidateError.message);
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Gagal mengambil daftar pelamar",
+          error: { database: [candidateError.message] },
+        },
+        { status: 400 },
+      );
+    }
+
     const {
       data: job_application_status_log,
       error: job_application_status_log_error,
