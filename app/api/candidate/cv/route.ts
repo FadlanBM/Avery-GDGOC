@@ -1,6 +1,77 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: Request) {
+  try {
+    const supabase = await createClient();
+
+    // 1. Auth Check
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Unauthorized: Silakan login terlebih dahulu",
+          error: { auth: ["Session not found"] },
+        },
+        { status: 401 },
+      );
+    }
+
+    // 2. Fetch all CVs for current user with assets data
+    const { data: cvs, error } = await supabase
+      .from("candidate_cv")
+      .select(`
+        id,
+        asset_id,
+        is_primary,
+        created_at,
+        assets (
+          file_name,
+          public_url,
+          file_size
+        )
+      `)
+      .eq("user_id", session.user.id)
+      .order("is_primary", { ascending: false })
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Gagal mengambil data CV",
+          error: { database: [error.message] },
+        },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({
+      status: true,
+      message: "Data CV berhasil diambil",
+      data: cvs || [],
+    });
+  } catch (error) {
+    console.error("Get CV error:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Internal Server Error";
+    return NextResponse.json(
+      {
+        status: false,
+        message: "Terjadi kesalahan internal server",
+        error: { server: [errorMessage] },
+      },
+      { status: 500 },
+    );
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
