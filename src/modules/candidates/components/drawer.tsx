@@ -7,17 +7,7 @@ import { ChevronDown, XCircle, Users, X } from "lucide-react";
 import { CandidatesTable } from "./candidates-table";
 import { Pagination } from "@/components/pagination";
 import { CandidateDetailDrawer } from "./candidate-detail-drawer";
-
-interface Candidate {
-  id: string;
-  name: string;
-  email: string;
-  applied_role: string;
-  experience: string;
-  ai_match: number;
-  status: string;
-  applied_date: string;
-}
+import { Candidate } from "../types";
 
 interface DrawerProps {
   candidates: Candidate[];

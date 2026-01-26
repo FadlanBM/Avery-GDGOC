@@ -1,20 +1,18 @@
 "use client";
 
-import { X, Mail, MapPin, FileText, Download, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Mail, MapPin, FileText, Download, Sparkles, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import Image from "next/image";
+import { Candidate } from "../types";
 
-interface Candidate {
+interface CandidateCV {
   id: string;
-  name: string;
-  email: string;
-  applied_role: string;
-  experience: string;
-  ai_match: number;
-  status: string;
-  applied_date: string;
+  file_name: string;
+  file_url: string;
+  is_primary: boolean;
 }
 
 interface CandidateDetailDrawerProps {
@@ -24,6 +22,58 @@ interface CandidateDetailDrawerProps {
 }
 
 export function CandidateDetailDrawer({ candidate, isOpen, onClose }: CandidateDetailDrawerProps) {
+  const [cvData, setCvData] = useState<CandidateCV | null>(null);
+  const [isLoadingCV, setIsLoadingCV] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && candidate?.user_id) {
+      fetchCandidateCV(candidate.user_id);
+    } else {
+      setCvData(null);
+    }
+  }, [isOpen, candidate?.user_id]);
+
+  const fetchCandidateCV = async (userId: string) => {
+    setIsLoadingCV(true);
+    try {
+      const response = await fetch(`/api/candidate/cv?user_id=${userId}`);
+      if (response.ok) {
+        const result = await response.json();
+        // Get primary CV or first CV
+        const cvs = result.data || [];
+        const primaryCV = cvs.find((cv: CandidateCV) => cv.is_primary) || cvs[0];
+        setCvData(primaryCV || null);
+      }
+    } catch (error) {
+      console.error("Error fetching CV:", error);
+    } finally {
+      setIsLoadingCV(false);
+    }
+  };
+
+  const handleDownloadCV = async () => {
+    if (!cvData?.file_url) return;
+    
+    setIsDownloading(true);
+    try {
+      const response = await fetch(cvData.file_url);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = cvData.file_name || "CV.pdf";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Error downloading CV:", error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   if (!isOpen || !candidate) return null;
 
   // Mock data for candidate details
@@ -55,13 +105,13 @@ export function CandidateDetailDrawer({ candidate, isOpen, onClose }: CandidateD
         {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-700 p-6 flex items-center justify-between z-999">
           <div className="flex items-center gap-3">
-            <Image
+            {/* <Image
               src={`https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.name)}&background=265BFF&color=fff&size=48`}
               alt={candidate.name}
               width={48}
               height={48}
               className="w-12 h-12 rounded-full"
-            />
+            /> */}
             <div>
               <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-50">
                 {candidate.name}
@@ -105,13 +155,29 @@ export function CandidateDetailDrawer({ candidate, isOpen, onClose }: CandidateD
               </h3>
             </div>
             <div className="bg-neutral-100 dark:bg-neutral-700 rounded-lg p-6 mb-3 flex items-center justify-center">
-              <FileText className="h-16 w-16 text-neutral-400 dark:text-neutral-500" />
+              {isLoadingCV ? (
+                <Loader2 className="h-16 w-16 text-neutral-400 dark:text-neutral-500 animate-spin" />
+              ) : (
+                <FileText className="h-16 w-16 text-neutral-400 dark:text-neutral-500" />
+              )}
             </div>
             <div className="text-center">
-              <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">CV Preview</p>
-              <Button variant="outline" size="sm" className="gap-2">
-                <Download className="h-4 w-4" />
-                Download PDF
+              <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">
+                {cvData ? cvData.file_name : "No CV uploaded"}
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2"
+                onClick={handleDownloadCV}
+                disabled={!cvData || isDownloading || isLoadingCV}
+              >
+                {isDownloading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                {isDownloading ? "Downloading..." : "Download PDF"}
               </Button>
             </div>
           </Card>

@@ -1,6 +1,97 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const supabase = await createClient();
+
+    // 1. Auth Check
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Unauthorized: Silakan login terlebih dahulu",
+          error: { auth: ["Session not found"] },
+        },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+
+    // 2. Verify CV ownership
+    const { data: cv, error: cvError } = await supabase
+      .from("candidate_cv")
+      .select("id, user_id")
+      .eq("id", id)
+      .eq("user_id", session.user.id)
+      .maybeSingle();
+
+    if (cvError || !cv) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "CV tidak ditemukan atau bukan milik Anda",
+        },
+        { status: 404 }
+      );
+    }
+
+    // 3. If setting as primary, remove primary flag from other CVs
+    if (body.is_primary === true) {
+      await supabase
+        .from("candidate_cv")
+        .update({ is_primary: false, updated_at: new Date().toISOString() })
+        .eq("user_id", session.user.id)
+        .neq("id", id);
+    }
+
+    // 4. Update the CV
+    const { error: updateError } = await supabase
+      .from("candidate_cv")
+      .update({
+        is_primary: body.is_primary,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id);
+
+    if (updateError) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Gagal mengupdate CV",
+          error: { database: [updateError.message] },
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      status: true,
+      message: "CV berhasil diupdate",
+    });
+  } catch (error) {
+    console.error("Update CV error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Internal Server Error";
+    return NextResponse.json(
+      {
+        status: false,
+        message: "Terjadi kesalahan internal server",
+        error: { server: [errorMessage] },
+      },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }

@@ -1,6 +1,95 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: Request) {
+  try {
+    const supabase = await createClient();
+
+    // 1. Auth Check
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Unauthorized: Silakan login terlebih dahulu",
+          error: { auth: ["Session not found"] },
+        },
+        { status: 401 },
+      );
+    }
+
+    // Check if user_id is provided (for HRD viewing candidate's CV)
+    const { searchParams } = new URL(request.url);
+    const targetUserId = searchParams.get("user_id");
+    
+    // Use target user_id if provided (HRD viewing candidate), otherwise use current user
+    const userId = targetUserId || session.user.id;
+
+    // 2. Fetch all CVs for target user with assets data
+    const { data: cvs, error } = await supabase
+      .from("candidate_cv")
+      .select(`
+        id,
+        asset_id,
+        is_primary,
+        created_at,
+        assets (
+          file_name,
+          public_url,
+          file_size
+        )
+      `)
+      .eq("user_id", userId)
+      .order("is_primary", { ascending: false })
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Gagal mengambil data CV",
+          error: { database: [error.message] },
+        },
+        { status: 500 },
+      );
+    }
+
+    // Transform data to include file_name and file_url at top level
+    const transformedCvs = (cvs || []).map((cv: any) => ({
+      id: cv.id,
+      asset_id: cv.asset_id,
+      is_primary: cv.is_primary,
+      created_at: cv.created_at,
+      file_name: cv.assets?.file_name || "Unknown",
+      file_url: cv.assets?.public_url || "",
+      file_size: cv.assets?.file_size || 0,
+    }));
+
+    return NextResponse.json({
+      status: true,
+      message: "Data CV berhasil diambil",
+      data: transformedCvs,
+    });
+  } catch (error) {
+    console.error("Get CV error:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Internal Server Error";
+    return NextResponse.json(
+      {
+        status: false,
+        message: "Terjadi kesalahan internal server",
+        error: { server: [errorMessage] },
+      },
+      { status: 500 },
+    );
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();

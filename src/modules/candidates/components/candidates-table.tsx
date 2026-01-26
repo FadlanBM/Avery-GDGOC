@@ -3,17 +3,7 @@
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-
-interface Candidate {
-  id: string;
-  name: string;
-  email: string;
-  applied_role: string;
-  experience: string;
-  ai_match: number;
-  status: string;
-  applied_date: string;
-}
+import { Candidate } from "../types";
 
 interface CandidatesTableProps {
   candidates: Candidate[];
@@ -92,13 +82,13 @@ export function CandidatesTable({ candidates, onCandidateClick }: CandidatesTabl
                 {/* Candidate Column */}
                 <td className="py-4 px-4">
                   <div className="flex items-center gap-3">
-                    <Image
+                    {/* <Image
                       src={`https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.name)}&background=265BFF&color=fff&size=40`}
                       alt={candidate.name}
                       width={40}
                       height={40}
                       className="w-10 h-10 rounded-full"
-                    />
+                    /> */}
                     <div>
                       <div className="font-medium text-neutral-900 dark:text-neutral-50">
                         {candidate.name}

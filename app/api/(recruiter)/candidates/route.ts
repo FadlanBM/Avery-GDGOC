@@ -1,129 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-
-// Mock candidates data
-const mockCandidates = [
-  {
-    id: "1",
-    name: "Sarah Jenkin",
-    email: "sarah.jenkin@email.com",
-    applied_role: "Senior React Developer",
-    experience: "6 years",
-    ai_match: 94,
-    status: "Interview",
-    applied_date: "2026-01-08",
-  },
-  {
-    id: "2",
-    name: "Marcus Chen",
-    email: "marcus.chen@email.com",
-    applied_role: "Senior React Developer",
-    experience: "8 years",
-    ai_match: 91,
-    status: "Screening",
-    applied_date: "2026-01-07",
-  },
-  {
-    id: "3",
-    name: "Emily Rodriguez",
-    email: "emily@email.com",
-    applied_role: "Product Manager",
-    experience: "5 years",
-    ai_match: 88,
-    status: "New",
-    applied_date: "2026-01-10",
-  },
-  {
-    id: "4",
-    name: "James Wilson",
-    email: "jwilson@email.com",
-    applied_role: "Senior React Developer",
-    experience: "4 years",
-    ai_match: 76,
-    status: "Rejected",
-    applied_date: "2026-01-05",
-  },
-  {
-    id: "5",
-    name: "Alisha Patel",
-    email: "alisha.patel@email.com",
-    applied_role: "UX Designer",
-    experience: "7 years",
-    ai_match: 92,
-    status: "Interview",
-    applied_date: "2026-01-09",
-  },
-  {
-    id: "6",
-    name: "David Kim",
-    email: "d.kim@email.com",
-    applied_role: "Backend Engineer",
-    experience: "5 years",
-    ai_match: 85,
-    status: "Screening",
-    applied_date: "2026-01-06",
-  },
-  {
-    id: "7",
-    name: "Lisa Anderson",
-    email: "lisa.anderson@email.com",
-    applied_role: "Frontend Developer",
-    experience: "3 years",
-    ai_match: 82,
-    status: "New",
-    applied_date: "2026-01-04",
-  },
-  {
-    id: "8",
-    name: "Michael Chang",
-    email: "m.chang@email.com",
-    applied_role: "DevOps Engineer",
-    experience: "6 years",
-    ai_match: 89,
-    status: "Interview",
-    applied_date: "2026-01-03",
-  },
-  {
-    id: "9",
-    name: "Rachel Green",
-    email: "rachel.g@email.com",
-    applied_role: "Product Designer",
-    experience: "4 years",
-    ai_match: 87,
-    status: "Screening",
-    applied_date: "2026-01-02",
-  },
-  {
-    id: "10",
-    name: "John Smith",
-    email: "john.smith@email.com",
-    applied_role: "Full Stack Developer",
-    experience: "7 years",
-    ai_match: 90,
-    status: "Interview",
-    applied_date: "2026-01-01",
-  },
-  {
-    id: "11",
-    name: "Amanda Lee",
-    email: "amanda.lee@email.com",
-    applied_role: "QA Engineer",
-    experience: "5 years",
-    ai_match: 78,
-    status: "New",
-    applied_date: "2025-12-30",
-  },
-  {
-    id: "12",
-    name: "Robert Brown",
-    email: "r.brown@email.com",
-    applied_role: "Data Analyst",
-    experience: "4 years",
-    ai_match: 84,
-    status: "Screening",
-    applied_date: "2025-12-29",
-  },
-];
 
 export async function GET(request: Request) {
   try {
@@ -143,34 +19,196 @@ export async function GET(request: Request) {
       );
     }
 
-    // Get pagination parameters from query string
+    // Get pagination and filter parameters from query string
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "6");
+    const status = searchParams.get("status");
+    const search = searchParams.get("search");
 
-    // Sort by applied_date DESC (newest first)
-    const sortedCandidates = [...mockCandidates].sort((a, b) => 
-      new Date(b.applied_date).getTime() - new Date(a.applied_date).getTime()
-    );
+    const currentPage = Math.max(1, page);
+    const currentLimit = Math.max(1, Math.min(limit, 100));
+    const from = (currentPage - 1) * currentLimit;
+    const to = from + currentLimit - 1;
 
-    // Calculate pagination
-    const totalCandidates = sortedCandidates.length;
-    const totalPages = Math.ceil(totalCandidates / limit);
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedCandidates = sortedCandidates.slice(startIndex, endIndex);
+    // Build query for job_applications with job data
+    let query = supabase
+      .from("job_applications")
+      .select(
+        `
+        id,
+        status,
+        applied_at,
+        created_at,
+        user_id,
+        job:job_id (
+          id,
+          title,
+          min_experience_year,
+          max_experience_year
+        )
+      `,
+        { count: "exact" }
+      )
+      .order("applied_at", { ascending: false });
+
+    // Apply status filter if provided
+    if (status) {
+      // Map display status to database status
+      const statusMap: Record<string, string> = {
+        new: "applied",
+        screening: "screening",
+        interview: "interview",
+        offered: "offered",
+        hired: "hired",
+        rejected: "rejected",
+      };
+      const dbStatus = statusMap[status.toLowerCase()] || status.toLowerCase();
+      query = query.eq("status", dbStatus);
+    }
+
+    // Get paginated data with count
+    const { data: applications, error, count: totalCount } = await query.range(from, to);
+
+    if (error) {
+      console.error("Error fetching candidates:", error.message);
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Gagal mengambil data kandidat",
+          error: { database: [error.message] },
+        },
+        { status: 500 }
+      );
+    }
+
+    // Fetch candidate profiles separately
+    const userIds = applications?.map((app) => app.user_id) || [];
+    let candidatesMap = new Map();
+    let authUsersMap = new Map();
+
+    if (userIds.length > 0) {
+      // Fetch from candidate table (for users who completed their profile)
+      const { data: candidateProfiles, error: candidateError } = await supabase
+        .from("candidate")
+        .select("user_id, fullname, email, phone")
+        .in("user_id", userIds);
+
+      if (!candidateError && candidateProfiles) {
+        candidateProfiles.forEach((c) => candidatesMap.set(c.user_id, c));
+      }
+
+      // Fetch auth users data for those without candidate profile
+      // Get users who don't have candidate profile yet
+      const missingUserIds = userIds.filter(id => !candidatesMap.has(id));
+      
+      if (missingUserIds.length > 0) {
+        try {
+          const adminClient = await createAdminClient();
+          
+          // Fetch users using admin client
+          const authUsersPromises = missingUserIds.map(async (userId) => {
+            try {
+              const { data: authUser } = await adminClient.auth.admin.getUserById(userId);
+              return authUser?.user || null;
+            } catch (error) {
+              console.error(`Error fetching user ${userId}:`, error);
+              return null;
+            }
+          });
+          
+          const authUsers = await Promise.all(authUsersPromises);
+          authUsers.forEach((user) => {
+            if (user) {
+              authUsersMap.set(user.id, user);
+            }
+          });
+        } catch (error) {
+          console.error("Error creating admin client:", error);
+        }
+      }
+    }
+
+    // Transform data to match expected format
+    const candidates = (applications || []).map((app: any) => {
+      const candidate = candidatesMap.get(app.user_id);
+      const authUser = authUsersMap.get(app.user_id);
+      const job = app.job;
+
+      // Get name with fallback chain: candidate.fullname -> auth user metadata -> email prefix
+      let displayName = "Unknown";
+      let email = "No email";
+      
+      if (candidate?.fullname) {
+        displayName = candidate.fullname;
+        email = candidate.email || email;
+      } else if (authUser) {
+        // Try to get display name from auth user metadata
+        const metadata = authUser.user_metadata || {};
+        displayName = metadata.display_name || metadata.full_name || metadata.name || authUser.email?.split("@")[0] || "Unknown";
+        email = authUser.email || email;
+      }
+
+      // Calculate experience display
+      let experience = "Not specified";
+      if (job?.min_experience_year !== null && job?.max_experience_year !== null) {
+        if (job.min_experience_year === job.max_experience_year) {
+          experience = `${job.min_experience_year} years`;
+        } else {
+          experience = `${job.min_experience_year}-${job.max_experience_year} years`;
+        }
+      }
+
+      // Map status to display format
+      const statusMap: Record<string, string> = {
+        applied: "New",
+        pending: "New",
+        screening: "Screening",
+        interview: "Interview",
+        offered: "Offered",
+        hired: "Hired",
+        rejected: "Rejected",
+      };
+
+      return {
+        id: app.id,
+        user_id: app.user_id,
+        name: displayName,
+        email: email,
+        applied_role: job?.title || "Unknown Position",
+        experience: experience,
+        ai_match: Math.floor(Math.random() * 30) + 70, // Placeholder for AI match score
+        status: statusMap[app.status] || app.status,
+        applied_date: app.applied_at?.split("T")[0] || app.created_at?.split("T")[0],
+      };
+    });
+
+    // Apply search filter client-side if needed
+    let filteredCandidates = candidates;
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filteredCandidates = candidates.filter(
+        (c: any) =>
+          c.name.toLowerCase().includes(searchLower) ||
+          c.email.toLowerCase().includes(searchLower) ||
+          c.applied_role.toLowerCase().includes(searchLower)
+      );
+    }
+
+    const totalCandidates = totalCount || 0;
+    const totalPages = Math.ceil(totalCandidates / currentLimit);
 
     return NextResponse.json({
       status: true,
       message: "Candidates retrieved successfully",
-      data: paginatedCandidates,
+      data: filteredCandidates,
       pagination: {
-        currentPage: page,
+        currentPage: currentPage,
         totalPages,
         totalCandidates,
-        itemsPerPage: limit,
-        hasNextPage: page < totalPages,
-        hasPrevPage: page > 1,
+        itemsPerPage: currentLimit,
+        hasNextPage: currentPage < totalPages,
+        hasPrevPage: currentPage > 1,
       },
     });
   } catch (error: unknown) {

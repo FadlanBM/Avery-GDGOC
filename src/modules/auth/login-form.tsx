@@ -50,7 +50,14 @@ function LoginFormContent() {
       });
 
       if (response.status === 200) {
+        // Check if profile completion is required
+        if (response.data.requiresProfile) {
+          router.push("/complete-profile");
+          return;
+        }
+        
         router.refresh();
+        // Redirect to dashboard - will be auto-redirected to /jobs if candidate
         router.push("/dashboard");
       }
     } catch (err) {
