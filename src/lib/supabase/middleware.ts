@@ -108,6 +108,39 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Check if user is registrant and needs to complete profile
+  if (user && !request.nextUrl.pathname.startsWith("/complete-profile") && !request.nextUrl.pathname.startsWith("/api/")) {
+    try {
+      // Check user role
+      const { data: userRole } = await supabase
+        .from("user_roles")
+        .select("roles(name)")
+        .eq("user_id", user.id)
+        .single();
+
+      if (userRole?.roles?.name === "registrant") {
+        // Check if candidate profile exists
+        const { data: candidateProfile } = await supabase
+          .from("candidate")
+          .select("user_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        // If no profile exists, redirect to complete-profile
+        if (!candidateProfile && 
+            !request.nextUrl.pathname.startsWith("/login") &&
+            !request.nextUrl.pathname.startsWith("/register") &&
+            !request.nextUrl.pathname.startsWith("/auth/callback")) {
+          const url = request.nextUrl.clone();
+          url.pathname = "/complete-profile";
+          return NextResponse.redirect(url);
+        }
+      }
+    } catch (error) {
+      console.error("Error checking profile:", error);
+    }
+  }
+
   // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're
   // creating a new response object with NextResponse.next() make sure to:
   // 1. Pass the request in it, like so:

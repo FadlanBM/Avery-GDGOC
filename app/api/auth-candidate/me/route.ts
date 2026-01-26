@@ -103,12 +103,13 @@ export async function GET() {
     return NextResponse.json({
       status: true,
       message: "Data user berhasil diambil",
-      user: {
+      data: {
         id: user.id,
         email: user.email,
         name: profile?.full_name || user.user_metadata?.full_name || null,
         avatar: user.user_metadata?.avatar_url || null,
         last_sign_in: user.last_sign_in_at,
+        role: userRole,
         profile: {
           phone: profile?.phone,
           gender: profile?.gender,

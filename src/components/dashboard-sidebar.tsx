@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard } from "lucide-react";
+import { LayoutDashboard, Briefcase, FileText } from "lucide-react";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
 interface DashboardSidebarProps {
   user?: {
@@ -16,14 +18,46 @@ interface DashboardSidebarProps {
 
 export default function DashboardSidebar({ user }: DashboardSidebarProps) {
   const pathname = usePathname();
+  
+  // Detect initial role from current pathname to avoid flicker
+  const getInitialRole = () => {
+    if (pathname.startsWith("/jobs") || pathname.startsWith("/my-applications")) {
+      return "registrant";
+    }
+    return null;
+  };
+  
+  const [userRole, setUserRole] = useState<string | null>(getInitialRole);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const menuItems = [
+  useEffect(() => {
+    // Fetch user role to determine menu items
+    const fetchUserRole = async () => {
+      try {
+        const response = await axios.get("/api/auth/me");
+        if (response.data.status && response.data.data?.role) {
+          setUserRole(response.data.data.role);
+        } else {
+          setUserRole("recruiter");
+        }
+      } catch (error) {
+        console.error("Error fetching user role:", error);
+        // Default to recruiter menu if error
+        setUserRole("recruiter");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserRole();
+  }, []);
+
+  // Menu items for recruiters
+  const recruiterMenuItems = [
     {
       title: "Dashboard",
       href: "/dashboard",
-      icon: (
-        <LayoutDashboard className="w-5 h-5" />
-      ),
+      icon: <LayoutDashboard className="w-5 h-5" />,
     },
     {
       title: "Job Openings",
@@ -63,6 +97,59 @@ export default function DashboardSidebar({ user }: DashboardSidebarProps) {
       ),
     },
   ];
+
+  // Menu items for candidates (registrants)
+  const candidateMenuItems = [
+    {
+      title: "Find Jobs",
+      href: "/jobs",
+      icon: <Briefcase className="w-5 h-5" />,
+    },
+    {
+      title: "My Applications",
+      href: "/my-applications",
+      icon: <FileText className="w-5 h-5" />,
+    },
+    {
+      title: "Settings",
+      href: "/settings",
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      ),
+    },
+  ];
+
+  // Determine which menu items to show based on role
+  const menuItems = userRole === "registrant" ? candidateMenuItems : recruiterMenuItems;
+
+  // Show loading skeleton or empty while fetching role
+  if (isLoading && !userRole) {
+    return (
+      <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-white border-r">
+        <div className="flex h-full flex-col">
+          <div className="flex h-16 items-center px-6">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-[#265BFF] rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">TalentAI</h2>
+            </div>
+          </div>
+          <nav className="flex-1 space-y-1 p-4">
+            {/* Loading skeleton */}
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-11 bg-gray-100 rounded-lg animate-pulse" />
+            ))}
+          </nav>
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-white border-r">

@@ -12,5 +12,17 @@ export default async function CandidatesPage() {
     redirect("/login");
   }
 
+  // Check user role - only allow recruiters
+  const { data: userRole } = await supabase
+    .from("user_roles")
+    .select("roles(name)")
+    .eq("user_id", user.id)
+    .single();
+
+  // If user is a candidate (registrant), redirect to jobs page
+  if (userRole?.roles?.name === "registrant") {
+    redirect("/jobs");
+  }
+
   return <CandidatesContainer user={user} />;
 }

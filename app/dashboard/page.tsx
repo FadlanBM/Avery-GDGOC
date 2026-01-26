@@ -14,5 +14,17 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
+  // Check user role
+  const { data: userRole } = await supabase
+    .from("user_roles")
+    .select("roles(name)")
+    .eq("user_id", user.id)
+    .single();
+
+  // If user is a candidate (registrant), redirect to jobs page
+  if (userRole?.roles?.name === "registrant") {
+    redirect("/jobs");
+  }
+
   return <DashboardContainer user={user} />;
 }
