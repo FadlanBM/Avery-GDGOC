@@ -6,18 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import Image from "next/image";
-
-interface Candidate {
-  id: string;
-  name: string;
-  email: string;
-  applied_role: string;
-  experience: string;
-  ai_match: number;
-  status: string;
-  applied_date: string;
-  user_id?: string;
-}
+import { Candidate } from "../types";
 
 interface CandidateCV {
   id: string;

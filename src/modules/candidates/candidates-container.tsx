@@ -6,6 +6,7 @@ import axios from "axios";
 import DashboardSidebar from "@/components/dashboard-sidebar";
 import DashboardHeader from "@/components/dashboard-header";
 import { Drawer } from "./components/drawer";
+import { Candidate } from "./types";
 
 interface CandidatesContainerProps {
   user: {
@@ -16,18 +17,6 @@ interface CandidatesContainerProps {
       full_name?: string;
     };
   };
-}
-
-interface Candidate {
-  id: string;
-  user_id?: string;
-  name: string;
-  email: string;
-  applied_role: string;
-  experience: string;
-  ai_match: number;
-  status: string;
-  applied_date: string;
 }
 
 export default function CandidatesContainer({ user }: CandidatesContainerProps) {

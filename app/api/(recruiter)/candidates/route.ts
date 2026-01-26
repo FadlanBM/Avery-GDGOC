@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -85,7 +85,7 @@ export async function GET(request: Request) {
     // Fetch candidate profiles separately
     const userIds = applications?.map((app) => app.user_id) || [];
     let candidatesMap = new Map();
-    let usersMap = new Map();
+    let authUsersMap = new Map();
 
     if (userIds.length > 0) {
       // Fetch from candidate table (for users who completed their profile)
@@ -98,39 +98,56 @@ export async function GET(request: Request) {
         candidateProfiles.forEach((c) => candidatesMap.set(c.user_id, c));
       }
 
-      // Fetch from users table as fallback (for display_name and email)
-      const { data: usersData, error: usersError } = await supabase
-        .from("users")
-        .select("id, email, raw_user_meta_data")
-        .in("id", userIds);
-
-      if (!usersError && usersData) {
-        usersData.forEach((u) => usersMap.set(u.id, u));
+      // Fetch auth users data for those without candidate profile
+      // Get users who don't have candidate profile yet
+      const missingUserIds = userIds.filter(id => !candidatesMap.has(id));
+      
+      if (missingUserIds.length > 0) {
+        try {
+          const adminClient = await createAdminClient();
+          
+          // Fetch users using admin client
+          const authUsersPromises = missingUserIds.map(async (userId) => {
+            try {
+              const { data: authUser } = await adminClient.auth.admin.getUserById(userId);
+              return authUser?.user || null;
+            } catch (error) {
+              console.error(`Error fetching user ${userId}:`, error);
+              return null;
+            }
+          });
+          
+          const authUsers = await Promise.all(authUsersPromises);
+          authUsers.forEach((user) => {
+            if (user) {
+              authUsersMap.set(user.id, user);
+            }
+          });
+        } catch (error) {
+          console.error("Error creating admin client:", error);
+        }
       }
     }
 
     // Transform data to match expected format
     const candidates = (applications || []).map((app: any) => {
       const candidate = candidatesMap.get(app.user_id);
-      const userData = usersMap.get(app.user_id);
+      const authUser = authUsersMap.get(app.user_id);
       const job = app.job;
 
-      // Get name with fallback chain: candidate.fullname -> user metadata display_name -> email prefix
+      // Get name with fallback chain: candidate.fullname -> auth user metadata -> email prefix
       let displayName = "Unknown";
+      let email = "No email";
+      
       if (candidate?.fullname) {
         displayName = candidate.fullname;
-      } else if (userData?.raw_user_meta_data?.display_name) {
-        displayName = userData.raw_user_meta_data.display_name;
-      } else if (userData?.raw_user_meta_data?.full_name) {
-        displayName = userData.raw_user_meta_data.full_name;
-      } else if (userData?.email) {
-        displayName = userData.email.split("@")[0];
-      } else if (candidate?.email) {
-        displayName = candidate.email.split("@")[0];
+        email = candidate.email || email;
+      } else if (authUser) {
+        // Try to get display name from auth user metadata
+        const metadata = authUser.user_metadata || {};
+        displayName = metadata.display_name || metadata.full_name || metadata.name || authUser.email?.split("@")[0] || "Unknown";
+        email = authUser.email || email;
       }
-
-      // Get email with fallback
-      const email = candidate?.email || userData?.email || "No email";
 
       // Calculate experience display
       let experience = "Not specified";
