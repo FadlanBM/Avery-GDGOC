@@ -121,3 +121,147 @@ export async function GET(request: Request) {
     );
   }
 }
+
+export async function POST(request: Request) {
+  try {
+    const supabase = await createClient();
+
+    // 1. Auth Check
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Unauthorized: Silakan login terlebih dahulu",
+          error: { auth: [authError?.message || "User not found"] },
+        },
+        { status: 401 },
+      );
+    }
+
+    // 2. Role Check (Must be registrant)
+    const roleValidation = await validateUserRole(
+      supabase,
+      user.id,
+      "registrant",
+    );
+    if (!roleValidation.isValid) {
+      return roleValidation.response;
+    }
+
+    // 3. Parse Request Body
+    const body = await request.json();
+    const { job_id } = body;
+
+    if (!job_id) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Job ID wajib diisi",
+          error: { validation: ["Missing job_id"] },
+        },
+        { status: 400 },
+      );
+    }
+
+    // 4. Check if job exists and is published
+    const { data: job, error: jobError } = await supabase
+      .from("job")
+      .select("id, status")
+      .eq("id", job_id)
+      .maybeSingle();
+
+    if (jobError || !job) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Lowongan tidak ditemukan",
+          error: { database: ["Job not found"] },
+        },
+        { status: 404 },
+      );
+    }
+
+    if (job.status !== "published") {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Lowongan ini tidak tersedia untuk dilamar",
+          error: { validation: ["Job is not published"] },
+        },
+        { status: 400 },
+      );
+    }
+
+    // 5. Check if already applied
+    const { data: existingApplication } = await supabase
+      .from("job_applications")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("job_id", job_id)
+      .maybeSingle();
+
+    if (existingApplication) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Anda sudah melamar pada lowongan ini",
+          error: { validation: ["Already applied"] },
+        },
+        { status: 400 },
+      );
+    }
+
+    // 6. Create Job Application
+    const currentTime = new Date().toISOString();
+    const { data: application, error: insertError } = await supabase
+      .from("job_applications")
+      .insert({
+        id: crypto.randomUUID(),
+        user_id: user.id,
+        job_id: job_id,
+        status: "applied",
+        applied_at: currentTime,
+        created_at: currentTime,
+        updated_at: currentTime,
+      })
+      .select("id")
+      .single();
+
+    if (insertError) {
+      console.error("Error creating job application:", insertError.message);
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Gagal mengirim lamaran",
+          error: { database: [insertError.message] },
+        },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({
+      status: true,
+      message: "Lamaran berhasil dikirim",
+      data: {
+        application_id: application.id,
+      },
+    });
+  } catch (error) {
+    console.error("Create job application error:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Internal Server Error";
+    return NextResponse.json(
+      {
+        status: false,
+        message: "Terjadi kesalahan internal server",
+        error: { server: [errorMessage] },
+      },
+      { status: 500 },
+    );
+  }
+}
