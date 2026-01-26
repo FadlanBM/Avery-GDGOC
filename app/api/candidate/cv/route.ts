@@ -23,7 +23,14 @@ export async function GET(request: Request) {
       );
     }
 
-    // 2. Fetch all CVs for current user with assets data
+    // Check if user_id is provided (for HRD viewing candidate's CV)
+    const { searchParams } = new URL(request.url);
+    const targetUserId = searchParams.get("user_id");
+    
+    // Use target user_id if provided (HRD viewing candidate), otherwise use current user
+    const userId = targetUserId || session.user.id;
+
+    // 2. Fetch all CVs for target user with assets data
     const { data: cvs, error } = await supabase
       .from("candidate_cv")
       .select(`
@@ -37,7 +44,7 @@ export async function GET(request: Request) {
           file_size
         )
       `)
-      .eq("user_id", session.user.id)
+      .eq("user_id", userId)
       .order("is_primary", { ascending: false })
       .order("created_at", { ascending: false });
 
@@ -52,10 +59,21 @@ export async function GET(request: Request) {
       );
     }
 
+    // Transform data to include file_name and file_url at top level
+    const transformedCvs = (cvs || []).map((cv: any) => ({
+      id: cv.id,
+      asset_id: cv.asset_id,
+      is_primary: cv.is_primary,
+      created_at: cv.created_at,
+      file_name: cv.assets?.file_name || "Unknown",
+      file_url: cv.assets?.public_url || "",
+      file_size: cv.assets?.file_size || 0,
+    }));
+
     return NextResponse.json({
       status: true,
       message: "Data CV berhasil diambil",
-      data: cvs || [],
+      data: transformedCvs,
     });
   } catch (error) {
     console.error("Get CV error:", error);

@@ -304,3 +304,108 @@ export async function POST(
     );
   }
 }
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const supabase = await createClient();
+
+    // 1. Auth Check
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Unauthorized: Silakan login terlebih dahulu",
+          error: { auth: [authError?.message || "User not found"] },
+        },
+        { status: 401 }
+      );
+    }
+
+    // 2. Role Check (Must be registrant)
+    const roleValidation = await validateUserRole(
+      supabase,
+      user.id,
+      "registrant"
+    );
+    if (!roleValidation.isValid) {
+      return roleValidation.response;
+    }
+
+    // 3. Check if application exists and belongs to user
+    const { data: application, error: appError } = await supabase
+      .from("job_applications")
+      .select("id, user_id, status")
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (appError || !application) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Lamaran tidak ditemukan atau bukan milik Anda",
+          error: { database: ["Application not found"] },
+        },
+        { status: 404 }
+      );
+    }
+
+    // 4. Check if application can be withdrawn (only applied/pending status can be withdrawn)
+    const withdrawableStatuses = ["applied", "pending"];
+    if (!withdrawableStatuses.includes(application.status)) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Lamaran tidak dapat dibatalkan karena sudah diproses",
+          error: { validation: ["Application already processed"] },
+        },
+        { status: 400 }
+      );
+    }
+
+    // 5. Delete the application
+    const { error: deleteError } = await supabase
+      .from("job_applications")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", user.id);
+
+    if (deleteError) {
+      console.error("Error deleting job application:", deleteError.message);
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Gagal membatalkan lamaran",
+          error: { database: [deleteError.message] },
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      status: true,
+      message: "Lamaran berhasil dibatalkan",
+    });
+  } catch (error) {
+    console.error("Delete job application error:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Internal Server Error";
+    return NextResponse.json(
+      {
+        status: false,
+        message: "Terjadi kesalahan internal server",
+        error: { server: [errorMessage] },
+      },
+      { status: 500 }
+    );
+  }
+}

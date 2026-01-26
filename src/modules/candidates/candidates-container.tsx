@@ -20,6 +20,7 @@ interface CandidatesContainerProps {
 
 interface Candidate {
   id: string;
+  user_id?: string;
   name: string;
   email: string;
   applied_role: string;
