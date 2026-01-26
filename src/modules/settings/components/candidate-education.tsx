@@ -195,57 +195,54 @@ export function CandidateEducation() {
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
               {educations.map((edu) => (
-                <Card key={edu.id} className="border-neutral-200 dark:border-neutral-700">
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50 mb-2">
-                          {edu.field_of_study}
+                <div key={edu.id} className="py-5 first:pt-0 last:pb-0">
+                  <div className="flex justify-between items-start">
+                    <div className="flex gap-4 flex-1">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-50 mb-1">
+                          {edu.institution_name}
                         </h3>
-                        <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400 mb-2">
-                          <School className="h-4 w-4" />
-                          <span>{edu.institution_name}</span>
-                          <span>•</span>
-                          <span className="capitalize">{edu.level}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-neutral-500 mb-3">
-                          <Calendar className="h-4 w-4" />
-                          <span>
-                            {formatDate(edu.start_date)} - {formatDate(edu.end_date)}
-                          </span>
-                        </div>
-                        <p className="text-sm text-neutral-600 dark:text-neutral-400 whitespace-pre-line">
-                          {edu.description}
+                        <p className="text-sm text-neutral-700 dark:text-neutral-300 mb-1">
+                          {edu.field_of_study} · <span className="capitalize">{edu.level}</span>
                         </p>
-                      </div>
-                      <div className="flex gap-2 ml-4">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleOpenDialog(edu)}
-                          disabled={deleting === edu.id}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(edu.id)}
-                          disabled={deleting === edu.id}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          {deleting === edu.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                        </Button>
+                        <p className="text-sm text-neutral-500 mb-2">
+                          {formatDate(edu.start_date)} - {formatDate(edu.end_date)}
+                        </p>
+                        {edu.description && (
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400 whitespace-pre-line">
+                            {edu.description}
+                          </p>
+                        )}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                    <div className="flex gap-1 ml-4">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleOpenDialog(edu)}
+                        disabled={deleting === edu.id}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(edu.id)}
+                        disabled={deleting === edu.id}
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        {deleting === edu.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           )}

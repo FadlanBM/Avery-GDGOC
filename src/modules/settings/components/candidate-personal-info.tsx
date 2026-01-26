@@ -40,11 +40,11 @@ export function CandidatePersonalInfo() {
       if (response.data.status && response.data.data) {
         const data = response.data.data;
         setFormData({
-          fullname: data.fullname || "",
-          gender: data.gender || false,
-          dateofbirth: data.dateofbirth || "",
-          address: data.address || "",
-          phone: data.phone || "",
+          fullname: data.name || "",
+          gender: data.profile?.gender || false,
+          dateofbirth: data.profile?.birth_date || "",
+          address: data.profile?.address || "",
+          phone: data.profile?.phone || "",
         });
       }
     } catch (error) {

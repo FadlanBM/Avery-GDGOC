@@ -59,8 +59,8 @@ export async function GET() {
 
     const { data: profile, error: profileError } = await supabase
       .from("candidate")
-      .select("full_name, email, phone, gender, birth_date, address, is_active")
-      .eq("id", user.id)
+      .select("fullname, email, phone, gender, dateofbirth, address, is_active")
+      .eq("user_id", user.id)
       .maybeSingle();
 
     if (profileError) {
@@ -106,20 +106,134 @@ export async function GET() {
       data: {
         id: user.id,
         email: user.email,
-        name: profile?.full_name || user.user_metadata?.full_name || null,
+        name: profile?.fullname || user.user_metadata?.full_name || null,
         avatar: user.user_metadata?.avatar_url || null,
         last_sign_in: user.last_sign_in_at,
         role: userRole,
         profile: {
           phone: profile?.phone,
           gender: profile?.gender,
-          birth_date: profile?.birth_date,
+          birth_date: profile?.dateofbirth,
           address: profile?.address,
         },
       },
     });
   } catch (err) {
     console.error("Error in /api/auth/me:", err);
+    const errorMessage =
+      err instanceof Error ? err.message : "Terjadi kesalahan internal server";
+
+    return NextResponse.json(
+      {
+        status: false,
+        message: "Internal Server Error",
+        error: { server: [errorMessage] },
+      },
+      { status: 500 },
+    );
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Unauthorized: Silakan login terlebih dahulu",
+          error: { auth: ["Session not found"] },
+        },
+        { status: 401 },
+      );
+    }
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Unauthorized: Silakan login terlebih dahulu",
+          error: { auth: [userError?.message || "User not found"] },
+        },
+        { status: 401 },
+      );
+    }
+
+    // Validasi Role Registrant
+    const { data: roleData, error: roleError } = await supabase
+      .from("user_roles")
+      .select("roles(name)")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const userRole = (roleData?.roles as any)?.name;
+
+    if (roleError || userRole !== "registrant") {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Forbidden: Anda tidak memiliki akses ke area candidate",
+          error: { auth: ["Invalid role access"] },
+        },
+        { status: 403 },
+      );
+    }
+
+    // Parse request body
+    const body = await request.json();
+    const { fullname, gender, dateofbirth, address, phone } = body;
+
+    // Validate required fields
+    if (!fullname || !phone) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Fullname dan phone wajib diisi",
+          error: { validation: ["Missing required fields"] },
+        },
+        { status: 400 },
+      );
+    }
+
+    // Update candidate profile
+    const { error: updateError } = await supabase
+      .from("candidate")
+      .update({
+        fullname: fullname,
+        gender: gender,
+        dateofbirth: dateofbirth,
+        address: address,
+        phone: phone,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", user.id);
+
+    if (updateError) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Gagal mengupdate profil",
+          error: { database: [updateError.message] },
+        },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({
+      status: true,
+      message: "Profil berhasil diupdate",
+    });
+  } catch (err) {
+    console.error("Error in PUT /api/auth-candidate/me:", err);
     const errorMessage =
       err instanceof Error ? err.message : "Terjadi kesalahan internal server";
 
