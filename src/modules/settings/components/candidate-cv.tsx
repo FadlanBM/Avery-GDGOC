@@ -14,11 +14,9 @@ interface CV {
   asset_id: string;
   is_primary: boolean;
   created_at: string;
-  assets: {
-    file_name: string;
-    public_url: string;
-    file_size: number;
-  };
+  file_name: string;
+  file_url: string;
+  file_size: number;
 }
 
 export function CandidateCV() {
@@ -227,7 +225,7 @@ export function CandidateCV() {
           </div>
         ) : (
           <div className="space-y-3">
-            {cvs.filter(cv => cv.assets).map((cv) => (
+            {cvs.filter(cv => cv.file_name).map((cv) => (
               <Card
                 key={cv.id}
                 className={`border-neutral-200 dark:border-neutral-700 ${
@@ -243,7 +241,7 @@ export function CandidateCV() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50 truncate">
-                            {cv.assets.file_name}
+                            {cv.file_name}
                           </h4>
                           {cv.is_primary && (
                             <Badge className="bg-[#265BFF] hover:bg-[#265BFF]">
@@ -253,7 +251,7 @@ export function CandidateCV() {
                           )}
                         </div>
                         <div className="flex items-center gap-3 text-xs text-neutral-500">
-                          <span>{formatFileSize(cv.assets.file_size)}</span>
+                          <span>{formatFileSize(cv.file_size)}</span>
                           <span>•</span>
                           <span>Uploaded {formatDate(cv.created_at)}</span>
                         </div>
@@ -263,7 +261,7 @@ export function CandidateCV() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => window.open(cv.assets.public_url, "_blank")}
+                        onClick={() => window.open(cv.file_url, "_blank")}
                         title="Download CV"
                       >
                         <Download className="h-4 w-4" />
