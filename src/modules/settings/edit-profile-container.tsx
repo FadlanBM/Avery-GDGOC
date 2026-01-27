@@ -2,6 +2,7 @@
 
 import DashboardSidebar from "@/components/dashboard-sidebar";
 import DashboardHeader from "@/components/dashboard-header";
+import { MainContent } from "@/components/main-content";
 import { EditProfileDrawer } from "./components/edit-profile-drawer";
 
 interface EditProfileContainerProps {
@@ -20,11 +21,11 @@ export default function EditProfileContainer({ user }: EditProfileContainerProps
     <div className="flex min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
       <DashboardSidebar />
       
-      <div className="flex-1 flex flex-col ml-64">
+      <MainContent>
         <DashboardHeader user={user} />
         
         <EditProfileDrawer />
-      </div>
+      </MainContent>
     </div>
   );
 }

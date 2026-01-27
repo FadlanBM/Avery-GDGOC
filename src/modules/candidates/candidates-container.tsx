@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import axios from "axios";
 import DashboardSidebar from "@/components/dashboard-sidebar";
 import DashboardHeader from "@/components/dashboard-header";
+import { MainContent } from "@/components/main-content";
 import { Drawer } from "./components/drawer";
 import { Candidate } from "./types";
 
@@ -92,7 +93,7 @@ export default function CandidatesContainer({ user }: CandidatesContainerProps) 
     <div className="flex min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
       <DashboardSidebar />
       
-      <div className="flex-1 flex flex-col ml-64">
+      <MainContent>
         <DashboardHeader user={user} />
         
         <Drawer 
@@ -106,7 +107,7 @@ export default function CandidatesContainer({ user }: CandidatesContainerProps) 
           onPageChange={handlePageChange}
           onRetry={handleRetry}
         />
-      </div>
+      </MainContent>
     </div>
   );
 }

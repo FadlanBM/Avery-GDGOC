@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useSidebar } from "@/lib/sidebar-context";
+import { cn } from "@/lib/utils";
 
 // Configuration for routes that need search
 const SEARCH_CONFIG: Record<string, { placeholder: string; paramName: string }> = {
@@ -30,6 +32,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { isCollapsed } = useSidebar();
   
   const [searchValue, setSearchValue] = useState("");
   
@@ -101,7 +104,12 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
   };
 
   return (
-    <header className="fixed top-0 right-0 z-30 h-16 border-b bg-white flex items-center justify-between px-8" style={{ left: '16rem' }}>
+    <header 
+      className={cn(
+        "fixed top-0 right-0 z-30 h-16 border-b bg-white flex items-center justify-between px-8 transition-all duration-300",
+        isCollapsed ? "left-20" : "left-64"
+      )}
+    >
       {showSearch ? (
         <div className="flex items-center gap-4 flex-1 max-w-md">
           <div className="relative flex-1">
