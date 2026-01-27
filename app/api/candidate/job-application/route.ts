@@ -38,6 +38,7 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const status = searchParams.get("status");
+    const searchQuery = searchParams.get("search"); // search by job title or company name
 
     const currentPage = Math.max(1, page);
     const currentLimit = Math.max(1, Math.min(limit, 100));
@@ -77,6 +78,10 @@ export async function GET(request: Request) {
       query = query.eq("status", status);
     }
 
+    // Note: For search on joined tables, we'll filter client-side after fetching
+    // This is because Supabase doesn't support filtering on nested relations directly
+    const needsClientSideSearch = searchQuery && searchQuery.trim();
+
     const { data, error, count } = await query
       .order("applied_at", { ascending: false })
       .range(from, to);
@@ -93,13 +98,24 @@ export async function GET(request: Request) {
       );
     }
 
-    const totalItems = count || 0;
+    // Client-side filtering for search on nested job data
+    let filteredData = data || [];
+    if (needsClientSideSearch && searchQuery) {
+      const searchLower = searchQuery.toLowerCase();
+      filteredData = filteredData.filter((app: any) => {
+        const jobTitle = app.job?.title?.toLowerCase() || "";
+        const companyName = app.job?.companie?.name?.toLowerCase() || "";
+        return jobTitle.includes(searchLower) || companyName.includes(searchLower);
+      });
+    }
+
+    const totalItems = needsClientSideSearch ? filteredData.length : (count || 0);
     const totalPages = Math.ceil(totalItems / currentLimit);
 
     return NextResponse.json({
       status: true,
       message: "Daftar lamaran kerja berhasil diambil",
-      data: data || [],
+      data: filteredData,
       pagination: {
         page: currentPage,
         limit: currentLimit,

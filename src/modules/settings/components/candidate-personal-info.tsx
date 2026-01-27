@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import axios from "axios";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +21,7 @@ interface PersonalInfo {
 }
 
 export function CandidatePersonalInfo() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<PersonalInfo>({
@@ -64,6 +66,8 @@ export function CandidatePersonalInfo() {
       
       if (response.data.status) {
         toast.success("Personal information updated successfully!");
+        // Refresh the page to update header with new name
+        router.refresh();
       }
     } catch (error) {
       console.error("Error updating personal info:", error);
@@ -122,7 +126,6 @@ export function CandidatePersonalInfo() {
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="Enter your phone number"
-                required
                 disabled={saving}
               />
             </div>
@@ -162,7 +165,6 @@ export function CandidatePersonalInfo() {
                 type="date"
                 value={formData.dateofbirth}
                 onChange={(e) => setFormData({ ...formData, dateofbirth: e.target.value })}
-                required
                 disabled={saving}
               />
             </div>
@@ -176,7 +178,6 @@ export function CandidatePersonalInfo() {
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               placeholder="Enter your address"
               rows={4}
-              required
               disabled={saving}
             />
           </div>

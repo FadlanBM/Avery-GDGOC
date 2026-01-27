@@ -32,8 +32,17 @@ export function HiringFunnelChart({ data, isLoading }: HiringFunnelChartProps) {
         <CardHeader>
           <CardTitle>Hiring Funnel</CardTitle>
         </CardHeader>
-        <CardContent>
-          <Skeleton className="h-full w-full" />
+        <CardContent className="space-y-4">
+          {/* Skeleton for each funnel stage */}
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-12" />
+              </div>
+              <Skeleton className="h-2.5 w-full rounded-full" />
+            </div>
+          ))}
         </CardContent>
       </Card>
     );

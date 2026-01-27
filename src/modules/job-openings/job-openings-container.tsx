@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import axios from "axios";
 import DashboardSidebar from "@/components/dashboard-sidebar";
 import DashboardHeader from "@/components/dashboard-header";
+import { MainContent } from "@/components/main-content";
 import { Drawer } from "./components/drawer";
 
 interface JobOpeningsContainerProps {
@@ -32,6 +34,9 @@ interface Job {
 }
 
 export default function JobOpeningsContainer({ user }: JobOpeningsContainerProps) {
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams?.get("search") || "";
+  
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,9 +48,15 @@ export default function JobOpeningsContainer({ user }: JobOpeningsContainerProps
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get(`/api/job?page=${currentPage}&limit=${itemsPerPage}`);
+      
+      let url = `/api/job?page=${currentPage}&limit=${itemsPerPage}`;
+      if (searchQuery) {
+        url += `&search=${encodeURIComponent(searchQuery)}`;
+      }
+      
+      const response = await axios.get(url);
       setJobs(response.data.data || []);
-      setTotalPages(response.data.totalPages || 1);
+      setTotalPages(response.data.pagination?.total_pages || response.data.totalPages || 1);
     } catch (err: any) {
       console.error("Error fetching jobs:", err);
       console.error("Error response:", err.response?.data);
@@ -56,8 +67,13 @@ export default function JobOpeningsContainer({ user }: JobOpeningsContainerProps
   };
 
   useEffect(() => {
+    // Reset to page 1 when search changes
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  useEffect(() => {
     fetchJobs();
-  }, [currentPage]);
+  }, [currentPage, searchQuery]);
   
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -71,7 +87,7 @@ export default function JobOpeningsContainer({ user }: JobOpeningsContainerProps
     <div className="flex min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
       <DashboardSidebar />
       
-      <div className="flex-1 flex flex-col ml-64">
+      <MainContent>
         <DashboardHeader user={user} />
         
         <Drawer
@@ -83,7 +99,7 @@ export default function JobOpeningsContainer({ user }: JobOpeningsContainerProps
           onPageChange={handlePageChange}
           onRetry={handleRetry}
         />
-      </div>
+      </MainContent>
     </div>
   );
 }

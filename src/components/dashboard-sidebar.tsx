@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Briefcase, FileText } from "lucide-react";
+import { LayoutDashboard, Briefcase, FileText, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { useSidebar } from "@/lib/sidebar-context";
+import { Button } from "@/components/ui/button";
 
 interface DashboardSidebarProps {
   user?: {
@@ -18,6 +20,7 @@ interface DashboardSidebarProps {
 
 export default function DashboardSidebar({ user }: DashboardSidebarProps) {
   const pathname = usePathname();
+  const { isCollapsed, toggleSidebar } = useSidebar();
   
   // Detect initial role from current pathname to avoid flicker
   const getInitialRole = () => {
@@ -128,7 +131,10 @@ export default function DashboardSidebar({ user }: DashboardSidebarProps) {
   // Show loading skeleton or empty while fetching role
   if (isLoading && !userRole) {
     return (
-      <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-white border-r">
+      <aside className={cn(
+        "fixed left-0 top-0 z-40 h-screen bg-white border-r transition-all duration-300",
+        isCollapsed ? "w-20" : "w-64"
+      )}>
         <div className="flex h-full flex-col">
           <div className="flex h-16 items-center px-6">
             <div className="flex items-center gap-2">
@@ -137,13 +143,16 @@ export default function DashboardSidebar({ user }: DashboardSidebarProps) {
                   <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                 </svg>
               </div>
-              <h2 className="text-xl font-bold text-gray-900">TalentAI</h2>
+              {!isCollapsed && <h2 className="text-xl font-bold text-gray-900">TalentAI</h2>}
             </div>
           </div>
           <nav className="flex-1 space-y-1 p-4">
             {/* Loading skeleton */}
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-11 bg-gray-100 rounded-lg animate-pulse" />
+              <div key={i} className={cn(
+                "h-11 bg-gray-100 rounded-lg animate-pulse",
+                isCollapsed ? "w-12" : "w-full"
+              )} />
             ))}
           </nav>
         </div>
@@ -152,19 +161,28 @@ export default function DashboardSidebar({ user }: DashboardSidebarProps) {
   }
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-white border-r">
+    <aside className={cn(
+      "fixed left-0 top-0 z-40 h-screen bg-white border-r transition-all duration-300",
+      isCollapsed ? "w-20" : "w-64"
+    )}>
       <div className="flex h-full flex-col">
-        <div className="flex h-16 items-center px-6">
+        <div className={cn(
+          "flex h-16 items-center",
+          isCollapsed ? "px-4 justify-center" : "px-6"
+        )}>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#265BFF] rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-[#265BFF] rounded-lg flex items-center justify-center flex-shrink-0">
               <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
               </svg>
             </div>
-            <h2 className="text-xl font-bold text-gray-900">TalentAI</h2>
+            {!isCollapsed && <h2 className="text-xl font-bold text-gray-900">TalentAI</h2>}
           </div>
         </div>
-        <nav className="flex-1 space-y-1 p-4">
+        <nav className={cn(
+          "flex-1 space-y-1",
+          isCollapsed ? "p-2" : "p-4"
+        )}>
           {menuItems.map((item) => {
             const isActive = pathname === item.href;
             return (
@@ -172,18 +190,44 @@ export default function DashboardSidebar({ user }: DashboardSidebarProps) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
+                  "flex items-center rounded-lg text-sm font-medium transition-colors",
+                  isCollapsed ? "justify-center px-3 py-3" : "gap-3 px-4 py-3",
                   isActive
                     ? "bg-[#265BFF] text-white font-semibold"
                     : "text-gray-700 hover:bg-gray-100"
                 )}
+                title={isCollapsed ? item.title : undefined}
               >
                 {item.icon}
-                {item.title}
+                {!isCollapsed && item.title}
               </Link>
             );
           })}
         </nav>
+        
+        {/* Collapse Toggle Button */}
+        <div className={cn(
+          "p-4 border-t",
+          isCollapsed ? "flex justify-center" : ""
+        )}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleSidebar}
+            className={cn(
+              "text-gray-600 hover:text-gray-900 hover:bg-gray-100",
+              isCollapsed ? "w-10 h-10 p-0" : "w-full justify-center gap-2"
+            )}
+          >
+            {isCollapsed ? (
+              <ChevronRight className="h-5 w-5" />
+            ) : (
+              <>
+                <ChevronLeft className="h-5 w-5" />
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     </aside>
   );

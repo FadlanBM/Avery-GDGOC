@@ -192,32 +192,46 @@ export async function PUT(request: Request) {
     const body = await request.json();
     const { fullname, gender, dateofbirth, address, phone } = body;
 
-    // Validate required fields
-    if (!fullname || !phone) {
+    // Validate required fields - only fullname is required
+    if (!fullname) {
       return NextResponse.json(
         {
           status: false,
-          message: "Fullname dan phone wajib diisi",
+          message: "Fullname wajib diisi",
           error: { validation: ["Missing required fields"] },
         },
         { status: 400 },
       );
     }
 
+    // Build update object with only provided fields
+    const updateData: Record<string, any> = {
+      fullname: fullname,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Only include optional fields if they have actual values (not empty)
+    // Don't set to null because these columns have NOT NULL constraints
+    if (gender !== undefined) updateData.gender = gender;
+    if (dateofbirth && dateofbirth.trim() !== "") {
+      updateData.dateofbirth = dateofbirth;
+    }
+    if (address && address.trim() !== "") {
+      updateData.address = address;
+    }
+    if (phone && phone.trim() !== "") {
+      updateData.phone = phone;
+    }
+
     // Update candidate profile
+    console.log("Updating candidate profile with data:", updateData);
     const { error: updateError } = await supabase
       .from("candidate")
-      .update({
-        fullname: fullname,
-        gender: gender,
-        dateofbirth: dateofbirth,
-        address: address,
-        phone: phone,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq("user_id", user.id);
 
     if (updateError) {
+      console.error("Update candidate error:", updateError);
       return NextResponse.json(
         {
           status: false,
@@ -226,6 +240,19 @@ export async function PUT(request: Request) {
         },
         { status: 500 },
       );
+    }
+
+    // Update user_metadata in Supabase Auth so header displays updated name
+    const { error: authUpdateError } = await supabase.auth.updateUser({
+      data: {
+        full_name: fullname,
+        name: fullname,
+      },
+    });
+    
+    if (authUpdateError) {
+      console.error("Auth update error:", authUpdateError);
+      // Don't fail the request, just log the error
     }
 
     return NextResponse.json({
