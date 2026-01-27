@@ -17,8 +17,8 @@ export function SettingsDrawer() {
 
         <div className="space-y-6 w-full">
           <ProfileSection />
-          <AIPreferencesSection />
-          <NotificationsSection />
+          {/* <AIPreferencesSection />
+          <NotificationsSection /> */}
         </div>
       </div>
     </main>

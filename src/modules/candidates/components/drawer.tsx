@@ -128,10 +128,10 @@ export function Drawer({
                 {totalCandidates} candidates with AI-powered screening insights
               </p>
             </div>
-            <Button variant="outline" className="gap-2">
+            {/* <Button variant="outline" className="gap-2">
               <span>Filter</span>
               <ChevronDown className="h-4 w-4" />
-            </Button>
+            </Button> */}
           </div>
           
           {/* Status Filter Badge */}

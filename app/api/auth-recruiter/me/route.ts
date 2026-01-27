@@ -121,3 +121,114 @@ export async function GET() {
     );
   }
 }
+  export async function PUT(request: Request) {
+    try {
+      const supabase = await createClient();
+      const body = await request.json();
+
+      // Validate required fields
+      if (!body.fullname || !body.position) {
+        return NextResponse.json(
+          {
+            status: false,
+            message: "Nama lengkap dan posisi wajib diisi",
+            error: { validation: ["Missing required fields"] },
+          },
+          { status: 400 }
+        );
+      }
+
+      // Get current user
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        return NextResponse.json(
+          {
+            status: false,
+            message: "Unauthorized: Silakan login terlebih dahulu",
+            error: { auth: [userError?.message || "User not found"] },
+          },
+          { status: 401 }
+        );
+      }
+
+      // Validate Role Recruiter
+      const { data: roleData, error: roleError } = await supabase
+        .from("user_roles")
+        .select("roles(name)")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const userRole = (roleData?.roles as any)?.name;
+
+      if (roleError || userRole !== "recruiter") {
+        return NextResponse.json(
+          {
+            status: false,
+            message: "Forbidden: Anda tidak memiliki akses ke area recruiter",
+            error: { auth: ["Invalid role access"] },
+          },
+          { status: 403 }
+        );
+      }
+
+      // Build update object - only include fields that have actual values
+      const updateData: any = {};
+      
+      if (body.fullname) updateData.fullname = body.fullname.trim();
+      if (body.position) updateData.position = body.position.trim();
+      if (typeof body.gender === 'boolean') updateData.gender = body.gender;
+      if (body.dateofbirth) updateData.dateofbirth = body.dateofbirth;
+      if (body.address && body.address.trim()) updateData.address = body.address.trim();
+
+      // Update profile in hrd_employee_data
+      const { error: updateError } = await supabase
+        .from("hrd_employee_data")
+        .update(updateData)
+        .eq("user_id", user.id);
+
+      if (updateError) {
+        console.error("Update profile error:", updateError);
+        return NextResponse.json(
+          {
+            status: false,
+            message: "Gagal mengupdate profil",
+            error: { database: [updateError.message] },
+          },
+          { status: 500 }
+        );
+      }
+
+      // Also update user metadata if fullname changed
+      if (body.fullname && body.fullname !== user.user_metadata?.full_name) {
+        await supabase.auth.updateUser({
+          data: {
+            full_name: body.fullname,
+            ...user.user_metadata,
+          },
+        });
+      }
+
+      return NextResponse.json({
+        status: true,
+        message: "Profil berhasil diupdate",
+        data: updateData,
+      });
+    } catch (err) {
+      console.error("Error in PUT /api/auth-recruiter/me:", err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Terjadi kesalahan internal server";
+
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Internal Server Error",
+          error: { server: [errorMessage] },
+        },
+        { status: 500 }
+      );
+    }
+  }

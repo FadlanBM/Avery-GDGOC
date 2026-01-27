@@ -8,6 +8,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useSidebar } from "@/lib/sidebar-context";
 import { cn } from "@/lib/utils";
+import axios from "axios";
 
 // Configuration for routes that need search
 const SEARCH_CONFIG: Record<string, { placeholder: string; paramName: string }> = {
@@ -28,6 +29,12 @@ interface DashboardHeaderProps {
   };
 }
 
+interface UserProfileData {
+  fullname: string;
+  email: string;
+  position: string;
+}
+
 export default function DashboardHeader({ user }: DashboardHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -35,6 +42,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
   const { isCollapsed } = useSidebar();
   
   const [searchValue, setSearchValue] = useState("");
+  const [profileData, setProfileData] = useState<UserProfileData | null>(null);
   
   // Get search config for current route
   const searchConfig = SEARCH_CONFIG[pathname];
@@ -49,6 +57,29 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
       setSearchValue("");
     }
   }, [pathname, searchParams, searchConfig]);
+
+  // Fetch user profile data from API
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await axios.get("/api/auth-recruiter/me");
+        if (response.data.status) {
+          setProfileData({
+            fullname: response.data.data.fullname,
+            email: response.data.data.email,
+            position: response.data.data.position,
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching user profile:", err);
+        // Fallback to user prop data if API fails
+      }
+    };
+
+    if (user?.id) {
+      fetchUserProfile();
+    }
+  }, [user?.id]);
 
   // Debounced search handler
   const updateSearchParams = useCallback(
@@ -87,8 +118,13 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
     setSearchValue(e.target.value);
   };
 
-  const userName = user?.user_metadata?.name || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
-  const userRole = "HR Recruiter";
+  // Use profile data from API if available, otherwise fallback to user prop
+  const userName = profileData?.fullname || 
+                   user?.user_metadata?.name || 
+                   user?.user_metadata?.full_name || 
+                   user?.email?.split("@")[0] || 
+                   "User";
+  const userEmail = profileData?.email || user?.email || "";
   const initials = userName
     .split(" ")
     .map((n) => n[0])
@@ -138,7 +174,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
           </div>
           <div className="text-left">
             <p className="text-sm font-medium text-gray-900">{userName}</p>
-            <p className="text-xs text-gray-500">{user?.email}</p>
+            <p className="text-xs text-gray-500">{userEmail}</p>
           </div>
         </div>
         <Button 

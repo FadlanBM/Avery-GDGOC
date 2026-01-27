@@ -1,42 +1,165 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
+import axios from "axios";
+import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
+
+interface ProfileData {
+  fullname: string;
+  email: string;
+  position: string;
+  gender?: string; // "male" | "female" | "" for form display
+  dateofbirth?: string;
+  address?: string;
+}
 
 export function EditProfileDrawer() {
   const router = useRouter();
   
-  // HRD Data
-  const [fullName, setFullName] = useState("Maya Kim");
-  const [email, setEmail] = useState("maya.kim@company.com");
-  const [jobTitle, setJobTitle] = useState("Senior HR Recruiter");
-  const [phone, setPhone] = useState("+1 (555) 123-4567");
-  const [department, setDepartment] = useState("Human Resources");
+  // Form data state
+  const [formData, setFormData] = useState<ProfileData>({
+    fullname: "",
+    email: "",
+    position: "",
+    gender: "",
+    dateofbirth: "",
+    address: "",
+  });
   
-  // Company Data
-  const [companyName, setCompanyName] = useState("TechCorp Inc.");
-  const [companyIndustry, setCompanyIndustry] = useState("Technology");
-  const [companySize, setCompanySize] = useState("500-1000 employees");
-  const [companyWebsite, setCompanyWebsite] = useState("https://techcorp.com");
-  const [companyAddress, setCompanyAddress] = useState("123 Tech Street, San Francisco, CA 94102");
-  const [companyDescription, setCompanyDescription] = useState("Leading technology company focused on innovation and digital transformation.");
+  // UI states
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchProfileData();
+  }, []);
+
+  const fetchProfileData = async () => {
+    try {
+      const response = await axios.get("/api/auth-recruiter/me");
+      if (response.data.status) {
+        const data = response.data.data;
+        setFormData({
+          fullname: data.fullname || "",
+          email: data.email || "",
+          position: data.position || "",
+          gender: data.gender === true ? "male" : data.gender === false ? "female" : "",
+          dateofbirth: data.dateofbirth || "",
+          address: data.address || "",
+        });
+      } else {
+        setError("Gagal mengambil data profil");
+      }
+    } catch (err) {
+      console.error("Error fetching profile:", err);
+      setError("Gagal mengambil data profil");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (field: keyof ProfileData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
   const handleSaveChanges = async () => {
-    // Handle save changes logic
-    console.log("Saving profile changes...");
-    // After save, redirect back to settings
-    router.push("/settings");
+    if (!formData.fullname.trim() || !formData.position.trim()) {
+      toast.error("Nama lengkap dan posisi wajib diisi");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      // Convert gender string to boolean for API
+      const apiData = {
+        ...formData,
+        gender: formData.gender === "male" ? true : formData.gender === "female" ? false : undefined,
+      };
+      
+      const response = await axios.put("/api/auth-recruiter/me", apiData);
+      if (response.data.status) {
+        toast.success("Profil berhasil diupdate");
+        
+        // Refresh auth session to get updated user metadata
+        const supabase = createClient();
+        await supabase.auth.refreshSession();
+        
+        router.push("/settings");
+        router.refresh(); // Refresh to update header
+      } else {
+        toast.error(response.data.message || "Gagal mengupdate profil");
+      }
+    } catch (err) {
+      console.error("Error saving profile:", err);
+      const errorMessage = err instanceof Error ? err.message : "Gagal mengupdate profil";
+      const responseMessage = (err as any)?.response?.data?.message;
+      toast.error(responseMessage || errorMessage);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCancel = () => {
     router.push("/settings");
   };
+
+  if (loading) {
+    return (
+      <main className="flex-1 p-8 mt-16">
+        <div className="max-w-4xl">
+          <div className="mb-6">
+            <Skeleton className="h-8 w-32 mb-4" />
+            <Skeleton className="h-8 w-64 mb-2" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-32" />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="flex-1 p-8 mt-16">
+        <div className="max-w-4xl">
+          <div className="text-center py-8">
+            <p className="text-red-600 mb-4">{error}</p>
+            <Button onClick={fetchProfileData} variant="outline">
+              Retry
+            </Button>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="flex-1 p-8 mt-16">
@@ -47,6 +170,7 @@ export function EditProfileDrawer() {
             variant="ghost"
             className="mb-4 -ml-2 text-neutral-600 hover:text-neutral-900"
             onClick={handleCancel}
+            disabled={saving}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Settings
@@ -55,7 +179,7 @@ export function EditProfileDrawer() {
             Edit Profile
           </h1>
           <p className="text-neutral-600 dark:text-neutral-400">
-            Update your personal and company information
+            Update your personal information
           </p>
         </div>
 
@@ -69,12 +193,13 @@ export function EditProfileDrawer() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name *</Label>
+                  <Label htmlFor="fullname">Full Name *</Label>
                   <Input
-                    id="fullName"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Maya Kim"
+                    id="fullname"
+                    value={formData.fullname}
+                    onChange={(e) => handleInputChange('fullname', e.target.value)}
+                    placeholder="Enter your full name"
+                    disabled={saving}
                   />
                 </div>
                 <div className="space-y-2">
@@ -82,114 +207,63 @@ export function EditProfileDrawer() {
                   <Input
                     id="email"
                     type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="maya.kim@company.com"
+                    value={formData.email}
+                    disabled
+                    placeholder="your.email@company.com"
+                    className="bg-neutral-50 dark:bg-neutral-800"
                   />
                 </div>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="jobTitle">Job Title *</Label>
+                  <Label htmlFor="position">Position *</Label>
                   <Input
-                    id="jobTitle"
-                    value={jobTitle}
-                    onChange={(e) => setJobTitle(e.target.value)}
-                    placeholder="Senior HR Recruiter"
+                    id="position"
+                    value={formData.position}
+                    onChange={(e) => handleInputChange('position', e.target.value)}
+                    placeholder="Your job position"
+                    disabled={saving}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+1 (555) 123-4567"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                <Input
-                  id="department"
-                  value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
-                  placeholder="Human Resources"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Company Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold">Company Information</CardTitle>
-              <p className="text-sm text-neutral-500">Details about your organization</p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="companyName">Company Name *</Label>
-                  <Input
-                    id="companyName"
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    placeholder="TechCorp Inc."
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="companyIndustry">Industry *</Label>
-                  <Input
-                    id="companyIndustry"
-                    value={companyIndustry}
-                    onChange={(e) => setCompanyIndustry(e.target.value)}
-                    placeholder="Technology"
-                  />
+                  <Label htmlFor="gender">Gender</Label>
+                  <select
+                    id="gender"
+                    value={formData.gender}
+                    onChange={(e) => handleInputChange('gender', e.target.value)}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={saving}
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                  </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="companySize">Company Size</Label>
+                  <Label htmlFor="dateofbirth">Date of Birth</Label>
                   <Input
-                    id="companySize"
-                    value={companySize}
-                    onChange={(e) => setCompanySize(e.target.value)}
-                    placeholder="500-1000 employees"
+                    id="dateofbirth"
+                    type="date"
+                    value={formData.dateofbirth}
+                    onChange={(e) => handleInputChange('dateofbirth', e.target.value)}
+                    disabled={saving}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="companyWebsite">Website</Label>
-                  <Input
-                    id="companyWebsite"
-                    type="url"
-                    value={companyWebsite}
-                    onChange={(e) => setCompanyWebsite(e.target.value)}
-                    placeholder="https://company.com"
-                  />
-                </div>
+                <div className="space-y-2"></div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="companyAddress">Company Address</Label>
+                <Label htmlFor="address">Address</Label>
                 <Input
-                  id="companyAddress"
-                  value={companyAddress}
-                  onChange={(e) => setCompanyAddress(e.target.value)}
-                  placeholder="123 Street, City, State ZIP"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="companyDescription">Company Description</Label>
-                <Textarea
-                  id="companyDescription"
-                  value={companyDescription}
-                  onChange={(e) => setCompanyDescription(e.target.value)}
-                  placeholder="Brief description of your company..."
-                  rows={4}
+                  id="address"
+                  value={formData.address}
+                  onChange={(e) => handleInputChange('address', e.target.value)}
+                  placeholder="Your address"
+                  disabled={saving}
                 />
               </div>
             </CardContent>
@@ -200,14 +274,17 @@ export function EditProfileDrawer() {
             <Button
               variant="outline"
               onClick={handleCancel}
+              disabled={saving}
             >
               Cancel
             </Button>
             <Button
               onClick={handleSaveChanges}
               className="bg-blue-600 hover:bg-blue-700"
+              disabled={saving}
             >
-              Save Changes
+              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {saving ? "Saving..." : "Save Changes"}
             </Button>
           </div>
         </div>
@@ -215,3 +292,4 @@ export function EditProfileDrawer() {
     </main>
   );
 }
+
