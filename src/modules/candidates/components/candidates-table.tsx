@@ -61,9 +61,9 @@ export function CandidatesTable({ candidates, onCandidateClick }: CandidatesTabl
               <th className="text-left py-3 px-4 text-sm font-medium text-neutral-600 dark:text-neutral-400">
                 Experience
               </th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-neutral-600 dark:text-neutral-400">
+              {/* <th className="text-left py-3 px-4 text-sm font-medium text-neutral-600 dark:text-neutral-400">
                 AI Match
-              </th>
+              </th> */}
               <th className="text-left py-3 px-4 text-sm font-medium text-neutral-600 dark:text-neutral-400">
                 Status
               </th>
@@ -111,7 +111,7 @@ export function CandidatesTable({ candidates, onCandidateClick }: CandidatesTabl
                 </td>
 
                 {/* AI Match Column */}
-                <td className="py-4 px-4">
+                {/* <td className="py-4 px-4">
                   <div className="flex items-center gap-2">
                     <div className="w-24 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
                       <div
@@ -123,7 +123,7 @@ export function CandidatesTable({ candidates, onCandidateClick }: CandidatesTabl
                       {candidate.ai_match}%
                     </span>
                   </div>
-                </td>
+                </td> */}
 
                 {/* Status Column */}
                 <td className="py-4 px-4">
@@ -188,7 +188,7 @@ export function CandidatesTable({ candidates, onCandidateClick }: CandidatesTabl
                   {candidate.experience}
                 </span>
               </div>
-              <div className="flex justify-between items-center">
+              {/* <div className="flex justify-between items-center">
                 <span className="text-neutral-600 dark:text-neutral-400">AI Match:</span>
                 <div className="flex items-center gap-2">
                   <div className="w-20 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
@@ -201,7 +201,7 @@ export function CandidatesTable({ candidates, onCandidateClick }: CandidatesTabl
                     {candidate.ai_match}%
                   </span>
                 </div>
-              </div>
+              </div> */}
               <div className="flex justify-between">
                 <span className="text-neutral-600 dark:text-neutral-400">Applied:</span>
                 <span className="font-medium text-neutral-900 dark:text-neutral-50">
