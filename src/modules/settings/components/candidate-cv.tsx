@@ -227,7 +227,7 @@ export function CandidateCV() {
           </div>
         ) : (
           <div className="space-y-3">
-            {cvs.map((cv) => (
+            {cvs.filter(cv => cv.assets).map((cv) => (
               <Card
                 key={cv.id}
                 className={`border-neutral-200 dark:border-neutral-700 ${
