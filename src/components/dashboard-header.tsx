@@ -130,7 +130,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
           </div>
           <div className="text-left">
             <p className="text-sm font-medium text-gray-900">{userName}</p>
-            <p className="text-xs text-gray-500">{userRole}</p>
+            <p className="text-xs text-gray-500">{user?.email}</p>
           </div>
         </div>
         <Button 
