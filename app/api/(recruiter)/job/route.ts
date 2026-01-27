@@ -254,6 +254,7 @@ export async function GET(request: Request) {
 
     // Get status filter from query params (optional)
     const statusFilter = searchParams.get("status"); // published, draft, closed, filled
+    const searchQuery = searchParams.get("search"); // search by title or description
 
     let query = supabase
       .from("job")
@@ -282,6 +283,13 @@ export async function GET(request: Request) {
       ["draft", "published", "closed", "filled"].includes(statusFilter)
     ) {
       query = query.eq("status", statusFilter);
+    }
+
+    // Apply search filter if provided (search by title or description)
+    if (searchQuery && searchQuery.trim()) {
+      query = query.or(
+        `title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`
+      );
     }
 
     const { data, error, count } = await query

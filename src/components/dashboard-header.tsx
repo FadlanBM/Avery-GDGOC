@@ -1,10 +1,19 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import { Search, Bell, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+
+// Configuration for routes that need search
+const SEARCH_CONFIG: Record<string, { placeholder: string; paramName: string }> = {
+  "/job-openings": { placeholder: "Cari lowongan...", paramName: "search" },
+  "/candidates": { placeholder: "Cari kandidat...", paramName: "search" },
+  "/jobs": { placeholder: "Cari pekerjaan...", paramName: "search" },
+  "/my-applications": { placeholder: "Cari lamaran...", paramName: "search" },
+};
 
 interface DashboardHeaderProps {
   user?: {
@@ -19,6 +28,62 @@ interface DashboardHeaderProps {
 
 export default function DashboardHeader({ user }: DashboardHeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  
+  const [searchValue, setSearchValue] = useState("");
+  
+  // Get search config for current route
+  const searchConfig = SEARCH_CONFIG[pathname];
+  const showSearch = !!searchConfig;
+
+  // Sync search value with URL params when pathname changes (reset on route change)
+  useEffect(() => {
+    if (searchConfig) {
+      const currentSearch = searchParams.get(searchConfig.paramName) || "";
+      setSearchValue(currentSearch);
+    } else {
+      setSearchValue("");
+    }
+  }, [pathname, searchParams, searchConfig]);
+
+  // Debounced search handler
+  const updateSearchParams = useCallback(
+    (value: string) => {
+      if (!searchConfig) return;
+      
+      const params = new URLSearchParams(searchParams.toString());
+      if (value.trim()) {
+        params.set(searchConfig.paramName, value.trim());
+      } else {
+        params.delete(searchConfig.paramName);
+      }
+      params.set("page", "1"); // Reset to first page on search
+      router.push(`${pathname}?${params.toString()}`);
+    },
+    [pathname, searchParams, searchConfig, router]
+  );
+
+  // Debounce effect
+  useEffect(() => {
+    if (!searchConfig) return;
+    
+    const currentUrlSearch = searchParams.get(searchConfig.paramName) || "";
+    
+    // Only trigger if value differs from URL
+    if (searchValue !== currentUrlSearch) {
+      const timer = setTimeout(() => {
+        updateSearchParams(searchValue);
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [searchValue, searchConfig, searchParams, updateSearchParams]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchValue(e.target.value);
+  };
+
   const userName = user?.user_metadata?.name || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
   const userRole = "HR Recruiter";
   const initials = userName
@@ -37,15 +102,21 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
 
   return (
     <header className="fixed top-0 right-0 z-30 h-16 border-b bg-white flex items-center justify-between px-8" style={{ left: '16rem' }}>
-      <div className="flex items-center gap-4 flex-1 max-w-md">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search candidates, jobs..."
-            className="pl-10 bg-gray-100 border-0 focus-visible:ring-1 focus-visible:ring-[#265BFF] focus-visible:ring-offset-0"
-          />
+      {showSearch ? (
+        <div className="flex items-center gap-4 flex-1 max-w-md">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder={searchConfig.placeholder}
+              value={searchValue}
+              onChange={handleSearchChange}
+              className="pl-10 bg-gray-100 border-0 focus-visible:ring-1 focus-visible:ring-[#265BFF] focus-visible:ring-offset-0"
+            />
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex-1 max-w-md" />
+      )}
 
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" className="relative">

@@ -35,8 +35,16 @@ export function MyApplicationsContainer() {
     setError(null);
 
     try {
+      // Build query parameters
+      const params = new URLSearchParams();
+      params.set("page", page.toString());
+      params.set("limit", itemsPerPage.toString());
+      
+      const search = searchParams.get("search");
+      if (search) params.set("search", search);
+      
       const response = await axios.get<ApplicationsResponse>(
-        `/api/candidate/job-application?page=${page}&limit=${itemsPerPage}`
+        `/api/candidate/job-application?${params.toString()}`
       );
 
       if (response.data.status) {

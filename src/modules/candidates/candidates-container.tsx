@@ -22,6 +22,7 @@ interface CandidatesContainerProps {
 export default function CandidatesContainer({ user }: CandidatesContainerProps) {
   const searchParams = useSearchParams();
   const statusFilter = searchParams?.get("status") || "";
+  const searchQuery = searchParams?.get("search") || "";
   
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +40,9 @@ export default function CandidatesContainer({ user }: CandidatesContainerProps) 
       let url = `/api/candidates?page=${currentPage}&limit=${itemsPerPage}`;
       if (statusFilter) {
         url += `&status=${statusFilter}`;
+      }
+      if (searchQuery) {
+        url += `&search=${encodeURIComponent(searchQuery)}`;
       }
       
       const response = await axios.get(url);
@@ -68,8 +72,13 @@ export default function CandidatesContainer({ user }: CandidatesContainerProps) 
   };
 
   useEffect(() => {
+    // Reset to page 1 when search or filter changes
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
+
+  useEffect(() => {
     fetchCandidates();
-  }, [currentPage, statusFilter]);
+  }, [currentPage, statusFilter, searchQuery]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
