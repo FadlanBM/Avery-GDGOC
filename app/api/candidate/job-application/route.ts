@@ -216,7 +216,26 @@ export async function POST(request: Request) {
       );
     }
 
-    // 6. Create Job Application
+    // 6. Check if candidate has a primary CV
+    const { data: candidateCV, error: cvError } = await supabase
+      .from("candidate_cv")
+      .select("asset_id")
+      .eq("user_id", user.id)
+      .eq("is_primary", true)
+      .maybeSingle();
+
+    if (cvError || !candidateCV) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Silakan unggah dan pilih CV utama terlebih dahulu",
+          error: { validation: ["Primary CV not found"] },
+        },
+        { status: 400 },
+      );
+    }
+
+    // 7. Create Job Application
     const currentTime = new Date().toISOString();
     const { data: application, error: insertError } = await supabase
       .from("job_applications")
@@ -225,7 +244,8 @@ export async function POST(request: Request) {
         user_id: user.id,
         job_id: job_id,
         status: "applied",
-        applied_at: currentTime,
+        asset_id: candidateCV.asset_id,
+        applied_at: currentTime,  
         created_at: currentTime,
         updated_at: currentTime,
       })

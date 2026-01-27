@@ -19,10 +19,12 @@ interface CandidatesContainerProps {
   };
 }
 
-export default function CandidatesContainer({ user }: CandidatesContainerProps) {
+export default function CandidatesContainer({
+  user,
+}: CandidatesContainerProps) {
   const searchParams = useSearchParams();
   const statusFilter = searchParams?.get("status") || "";
-  
+
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,24 +37,26 @@ export default function CandidatesContainer({ user }: CandidatesContainerProps) 
     try {
       setLoading(true);
       setError(null);
-      
+
       let url = `/api/candidates?page=${currentPage}&limit=${itemsPerPage}`;
       if (statusFilter) {
         url += `&status=${statusFilter}`;
       }
-      
+
       const response = await axios.get(url);
-      
+      console.log(response);
+
       if (response.data.status) {
         let fetchedCandidates = response.data.data || [];
-        
+
         // Client-side filtering if API doesn't support status filter
         if (statusFilter && fetchedCandidates.length > 0) {
           fetchedCandidates = fetchedCandidates.filter(
-            (c: Candidate) => c.status.toLowerCase() === statusFilter.toLowerCase()
+            (c: Candidate) =>
+              c.status.toLowerCase() === statusFilter.toLowerCase(),
           );
         }
-        
+
         setCandidates(fetchedCandidates);
         setTotalPages(response.data.pagination?.totalPages || 1);
         setTotalCandidates(response.data.pagination?.totalCandidates || 0);
@@ -82,11 +86,11 @@ export default function CandidatesContainer({ user }: CandidatesContainerProps) 
   return (
     <div className="flex min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
       <DashboardSidebar />
-      
+
       <div className="flex-1 flex flex-col ml-64">
         <DashboardHeader user={user} />
-        
-        <Drawer 
+
+        <Drawer
           candidates={candidates}
           loading={loading}
           error={error}
