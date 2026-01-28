@@ -39,18 +39,18 @@ export function Drawer({
   onRetry,
 }: JobOpeningsDrawerProps) {
   return (
-    <main className="flex-1 p-8 mt-16">
+    <>
       <PageHeader />
       
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
           {[...Array(6)].map((_, i) => (
-            <Card key={i} className="h-64 animate-pulse bg-neutral-200 dark:bg-neutral-800" />
+            <Card key={i} className="h-48 lg:h-64 animate-pulse bg-neutral-200 dark:bg-neutral-800" />
           ))}
         </div>
       ) : error ? (
-        <Card className="p-8 text-center">
-          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+        <Card className="p-6 lg:p-8 text-center">
+          <AlertCircle className="h-10 lg:h-12 w-10 lg:w-12 text-red-500 mx-auto mb-4" />
           <h3 className="text-lg font-semibold mb-2">Error Loading Jobs</h3>
           <p className="text-neutral-600 dark:text-neutral-400 mb-4">{error}</p>
           <Button onClick={onRetry} variant="outline">
@@ -59,7 +59,7 @@ export function Drawer({
           </Button>
         </Card>
       ) : jobs.length === 0 ? (
-        <Card className="p-8 text-center">
+        <Card className="p-6 lg:p-8 text-center">
           <p className="text-neutral-600 dark:text-neutral-400">No job openings found.</p>
         </Card>
       ) : (
@@ -75,6 +75,6 @@ export function Drawer({
           />
         </>
       )}
-    </main>
+    </>
   );
 }

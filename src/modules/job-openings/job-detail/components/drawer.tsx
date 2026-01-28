@@ -5,9 +5,5 @@ interface DrawerProps {
 }
 
 export function Drawer({ jobId }: DrawerProps) {
-  return (
-    <main className="flex-1 p-8 mt-16">
-      <JobDetailContent jobId={jobId} />
-    </main>
-  );
+  return <JobDetailContent jobId={jobId} />;
 }

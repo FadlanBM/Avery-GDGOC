@@ -89,16 +89,16 @@ export function JobDetailContent({ jobId }: JobDetailContentProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex items-center justify-center py-8 lg:py-12">
+        <Loader2 className="h-6 lg:h-8 w-6 lg:w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (error || !job) {
     return (
-      <Card className="p-8 text-center">
-        <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+      <Card className="p-6 lg:p-8 text-center">
+        <XCircle className="h-10 lg:h-12 w-10 lg:w-12 text-red-500 mx-auto mb-4" />
         <h3 className="text-lg font-semibold mb-2">Error Loading Job</h3>
         <p className="text-neutral-600 dark:text-neutral-400 mb-4">
           {error || "Job not found"}
@@ -114,36 +114,16 @@ export function JobDetailContent({ jobId }: JobDetailContentProps) {
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header - Back Button & Status */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 lg:mb-6">
         <Button
           variant="ghost"
           onClick={() => router.back()}
-          className="gap-2 -ml-4"
+          className="gap-2 self-start -ml-2"
+          size="sm"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back
+          <span className="hidden sm:inline">Back</span>
         </Button>
-
-        {job.status !== "closed" && (
-          <Button
-            size="sm"
-            onClick={handleCloseJob}
-            disabled={closing}
-            className="gap-2 bg-transparent text-red-500 hover:bg-red-50 hover:text-red-600 border border-red-500 hover:border-red-600"
-          >
-            {closing ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Closing...
-              </>
-            ) : (
-              <>
-                <XCircle className="h-4 w-4" />
-                Close Job
-              </>
-            )}
-          </Button>
-        )}
       </div>
 
       {/* Main Content Card */}
@@ -219,7 +199,7 @@ export function JobDetailContent({ jobId }: JobDetailContentProps) {
 
           {/* Job Description */}
           <div className="space-y-4">
-            <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed whitespace-pre-wrap">
+            <p className="text-sm lg:text-base text-neutral-700 dark:text-neutral-300 leading-relaxed whitespace-pre-wrap">
               {job.description}
             </p>
           </div>
@@ -227,12 +207,12 @@ export function JobDetailContent({ jobId }: JobDetailContentProps) {
           {/* Requirements Section */}
           {(job.min_experience_year > 0 || job.education_level) && (
             <div className="space-y-3">
-              <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+              <h2 className="text-base lg:text-lg font-semibold text-neutral-900 dark:text-neutral-50">
                 Requirements:
               </h2>
               <ul className="space-y-2 list-none">
                 {!job.no_experience_allowed && (
-                  <li className="flex items-start gap-2 text-neutral-700 dark:text-neutral-300">
+                  <li className="flex items-start gap-2 text-sm lg:text-base text-neutral-700 dark:text-neutral-300">
                     <span className="text-neutral-400 dark:text-neutral-500 mt-1">•</span>
                     <span>
                       {job.min_experience_year === job.max_experience_year
@@ -242,7 +222,7 @@ export function JobDetailContent({ jobId }: JobDetailContentProps) {
                   </li>
                 )}
                 {job.education_level && (
-                  <li className="flex items-start gap-2 text-neutral-700 dark:text-neutral-300">
+                  <li className="flex items-start gap-2 text-sm lg:text-base text-neutral-700 dark:text-neutral-300">
                     <span className="text-neutral-400 dark:text-neutral-500 mt-1">•</span>
                     <span>
                       Preferably {job.education_level.name} Degree/Bachelor Degree from Linguistics/Translation/Language major
@@ -254,8 +234,8 @@ export function JobDetailContent({ jobId }: JobDetailContentProps) {
           )}
 
           {/* Additional Job Information */}
-          <div className="pt-6 border-t space-y-3 text-sm">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="pt-4 lg:pt-6 border-t space-y-3 text-xs lg:text-sm">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
               {job.published_at && (
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-neutral-400" />
@@ -279,7 +259,28 @@ export function JobDetailContent({ jobId }: JobDetailContentProps) {
             </div>
           </div>
         </div>
+        
       </Card>
+      {job.status !== "closed" && (
+          <Button
+            size="sm"
+            onClick={handleCloseJob}
+            disabled={closing}
+            className="gap-2 bg-transparent text-red-500 hover:bg-red-50 hover:text-red-600 border border-red-500 hover:border-red-600 self-start sm:self-auto mt-4"
+          >
+            {closing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Closing...
+              </>
+            ) : (
+              <>
+                <XCircle className="h-4 w-4" />
+                Close Job
+              </>
+            )}
+          </Button>
+        )}
     </div>
   );
 }

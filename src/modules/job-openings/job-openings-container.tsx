@@ -3,21 +3,9 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import axios from "axios";
-import DashboardSidebar from "@/components/dashboard-sidebar";
-import DashboardHeader from "@/components/dashboard-header";
-import { MainContent } from "@/components/main-content";
 import { Drawer } from "./components/drawer";
 
-interface JobOpeningsContainerProps {
-  user: {
-    id: string;
-    email?: string;
-    user_metadata?: {
-      name?: string;
-      full_name?: string;
-    };
-  };
-}
+interface JobOpeningsContainerProps {}
 
 interface Job {
   id: string;
@@ -33,7 +21,7 @@ interface Job {
   created_at: string;
 }
 
-export default function JobOpeningsContainer({ user }: JobOpeningsContainerProps) {
+export default function JobOpeningsContainer() {
   const searchParams = useSearchParams();
   const searchQuery = searchParams?.get("search") || "";
   
@@ -84,22 +72,14 @@ export default function JobOpeningsContainer({ user }: JobOpeningsContainerProps
   };
 
   return (
-    <div className="flex min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
-      <DashboardSidebar />
-      
-      <MainContent>
-        <DashboardHeader user={user} />
-        
-        <Drawer
-          jobs={jobs}
-          loading={loading}
-          error={error}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-          onRetry={handleRetry}
-        />
-      </MainContent>
-    </div>
+    <Drawer
+      jobs={jobs}
+      loading={loading}
+      error={error}
+      currentPage={currentPage}
+      totalPages={totalPages}
+      onPageChange={handlePageChange}
+      onRetry={handleRetry}
+    />
   );
 }
