@@ -2,17 +2,17 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SettingsContainer } from "@/modules/settings";
 import DashboardSidebar from "@/components/dashboard-sidebar";
-import GuestHeader from "@/components/guest-header";
+import DashboardHeader from "@/components/dashboard-header";
+import MobileNavbar from "@/components/mobile-navbar";
 import { MainContent } from "@/components/main-content";
-import LoginPromptModal from "@/components/login-prompt-modal";
 
 function GuestSettingsView() {
   return (
-    <div className="flex min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
+    <div className="min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
       <DashboardSidebar isGuest={true} />
+      <MobileNavbar title="Settings" />
       <MainContent>
-        <GuestHeader title="Pengaturan" />
-        <main className="flex-1 p-8 mt-16">
+        <main className="flex-1 p-4 lg:p-8 pt-20 lg:pt-8">
           <div className="max-w-4xl mx-auto">
             <div className="text-center py-16">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
@@ -53,5 +53,17 @@ export default async function SettingsPage() {
     return <GuestSettingsView />;
   }
 
-  return <SettingsContainer user={user} />;
+  // Authenticated user view
+  return (
+    <div className="min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
+      <DashboardSidebar user={user} isGuest={false} />
+      <MobileNavbar user={user} title="Settings" />
+      <MainContent>
+        <DashboardHeader user={user} className="hidden lg:flex" />
+        <main className="flex-1 p-4 lg:p-8 pt-20 lg:pt-24">
+          <SettingsContainer />
+        </main>
+      </MainContent>
+    </div>
+  );
 }

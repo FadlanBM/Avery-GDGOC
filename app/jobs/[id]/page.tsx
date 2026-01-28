@@ -1,7 +1,7 @@
 import { JobDetailContainer } from "@/modules/candidate-jobs/job-detail";
 import DashboardSidebar from "@/components/dashboard-sidebar";
 import DashboardHeader from "@/components/dashboard-header";
-import GuestHeader from "@/components/guest-header";
+import MobileNavbar from "@/components/mobile-navbar";
 import { MainContent } from "@/components/main-content";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -33,11 +33,12 @@ export default async function JobDetailPage({
 
     // Authenticated candidate view
     return (
-      <div className="flex min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
-        <DashboardSidebar />
+      <div className="min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
+        <DashboardSidebar user={user} isGuest={false} />
+        <MobileNavbar user={user} title="Job Details" />
         <MainContent>
-          <DashboardHeader user={user} />
-          <main className="flex-1 p-8 mt-16">
+          <DashboardHeader user={user} className="hidden lg:flex" />
+          <main className="flex-1 p-4 lg:p-8 pt-20 lg:pt-24">
             <JobDetailContainer jobId={id} isGuest={false} />
           </main>
         </MainContent>
@@ -47,11 +48,11 @@ export default async function JobDetailPage({
 
   // Guest mode view
   return (
-    <div className="flex min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
+    <div className="min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
       <DashboardSidebar isGuest={true} />
+      <MobileNavbar title="Job Details" />
       <MainContent>
-        <GuestHeader title="Detail Pekerjaan" />
-        <main className="flex-1 p-8 mt-16">
+        <main className="flex-1 p-4 lg:p-8 pt-20 lg:pt-8">
           <JobDetailContainer jobId={id} isGuest={true} />
         </main>
       </MainContent>

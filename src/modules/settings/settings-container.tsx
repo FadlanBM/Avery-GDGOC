@@ -2,25 +2,13 @@
 
 import { useState, useEffect } from "react";
 import axios from "axios";
-import DashboardSidebar from "@/components/dashboard-sidebar";
-import DashboardHeader from "@/components/dashboard-header";
-import { MainContent } from "@/components/main-content";
 import { Drawer } from "./components/drawer";
 import { CandidateSettingsDrawer } from "./candidate-settings-drawer";
 import { Skeleton } from "@/components/ui/skeleton";
 
-interface SettingsContainerProps {
-  user: {
-    id: string;
-    email?: string;
-    user_metadata?: {
-      name?: string;
-      full_name?: string;
-    };
-  };
-}
+interface SettingsContainerProps {}
 
-export default function SettingsContainer({ user }: SettingsContainerProps) {
+export default function SettingsContainer() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -42,27 +30,21 @@ export default function SettingsContainer({ user }: SettingsContainerProps) {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
-      <DashboardSidebar />
-      
-      <MainContent>
-        <DashboardHeader user={user} />
-        
-        {loading ? (
-          <main className="flex-1 p-8 mt-16">
-            <Skeleton className="h-10 w-64 mb-4" />
-            <Skeleton className="h-6 w-96 mb-8" />
-            <div className="space-y-4">
-              <Skeleton className="h-48 w-full" />
-              <Skeleton className="h-48 w-full" />
-            </div>
-          </main>
-        ) : userRole === "registrant" ? (
-          <CandidateSettingsDrawer />
-        ) : (
-          <Drawer />
-        )}
-      </MainContent>
-    </div>
+    <>      
+      {loading ? (
+        <div className="space-y-4">
+          <div className="h-10 bg-gray-200 rounded animate-pulse" />
+          <div className="h-6 bg-gray-200 rounded animate-pulse w-3/4" />
+          <div className="space-y-4">
+            <div className="h-48 bg-gray-200 rounded animate-pulse" />
+            <div className="h-48 bg-gray-200 rounded animate-pulse" />
+          </div>
+        </div>
+      ) : userRole === "registrant" ? (
+        <CandidateSettingsDrawer />
+      ) : (
+        <Drawer />
+      )}
+    </>
   );
 }

@@ -15,7 +15,9 @@ export function MainContent({ children, className }: MainContentProps) {
   return (
     <div className={cn(
       "flex-1 flex flex-col transition-all duration-300",
-      isCollapsed ? "ml-20" : "ml-64",
+      // Desktop only: sidebar margin
+      "ml-0 lg:ml-0",
+      isCollapsed ? "lg:ml-20" : "lg:ml-64",
       className
     )}>
       {children}

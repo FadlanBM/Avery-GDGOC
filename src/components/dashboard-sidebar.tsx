@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Briefcase, FileText, ChevronLeft, ChevronRight } from "lucide-react";
+import { LayoutDashboard, Briefcase, FileText, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useSidebar } from "@/lib/sidebar-context";
@@ -21,7 +21,7 @@ interface DashboardSidebarProps {
 
 export default function DashboardSidebar({ user, isGuest = false }: DashboardSidebarProps) {
   const pathname = usePathname();
-  const { isCollapsed, toggleSidebar } = useSidebar();
+  const { isCollapsed, isMobileOpen, toggleSidebar, closeMobile } = useSidebar();
   
   // Detect initial role from current pathname to avoid flicker
   const getInitialRole = () => {
@@ -169,74 +169,86 @@ export default function DashboardSidebar({ user, isGuest = false }: DashboardSid
   }
 
   return (
-    <aside className={cn(
-      "fixed left-0 top-0 z-40 h-screen bg-white border-r transition-all duration-300",
-      isCollapsed ? "w-20" : "w-64"
-    )}>
-      <div className="flex h-full flex-col">
-        <div className={cn(
-          "flex h-16 items-center",
-          isCollapsed ? "px-4 justify-center" : "px-6"
-        )}>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#265BFF] rounded-lg flex items-center justify-center flex-shrink-0">
-              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-              </svg>
+    <>
+      {/* Mobile/Tablet Backdrop */}
+      {isMobileOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden" 
+          onClick={closeMobile}
+        />
+      )}
+      
+      {/* Sidebar - Hidden on mobile/tablet, overlay when hamburger clicked */}
+      <aside className={cn(
+        "fixed left-0 top-0 z-50 h-screen bg-white border-r transition-all duration-300",
+        // Desktop only - normal sidebar behavior
+        "hidden lg:block",
+        isCollapsed ? "lg:w-20" : "lg:w-64",
+        // Mobile overlay when hamburger opened
+        isMobileOpen && "lg:hidden block w-64"
+      )}>
+        <div className="flex h-full flex-col">
+          {/* Header */}
+          <div className="flex h-16 items-center justify-between px-6">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-[#265BFF] rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                </svg>
+              </div>
+              {(!isCollapsed || isMobileOpen) && (
+                <h2 className="text-xl font-bold text-gray-900">TalentAI</h2>
+              )}
             </div>
-            {!isCollapsed && <h2 className="text-xl font-bold text-gray-900">TalentAI</h2>}
+            
+            {/* Mobile close button */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="lg:hidden"
+              onClick={closeMobile}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            
+            {/* Desktop collapse button */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="hidden lg:flex"
+              onClick={toggleSidebar}
+            >
+              {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            </Button>
           </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 space-y-1 p-4">
+            {menuItems.map((item, index) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={index}
+                  href={item.href}
+                  onClick={closeMobile}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:bg-gray-100",
+                    isActive
+                      ? "bg-[#265BFF] text-white hover:bg-[#1E40AF]"
+                      : "text-gray-700 hover:text-gray-900",
+                    isCollapsed && "lg:justify-center"
+                  )}
+                >
+                  {item.icon}
+                  {(!isCollapsed || isMobileOpen) && (
+                    <span className="truncate">{item.title}</span>
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
         </div>
-        <nav className={cn(
-          "flex-1 space-y-1",
-          isCollapsed ? "p-2" : "p-4"
-        )}>
-          {menuItems.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center rounded-lg text-sm font-medium transition-colors",
-                  isCollapsed ? "justify-center px-3 py-3" : "gap-3 px-4 py-3",
-                  isActive
-                    ? "bg-[#265BFF] text-white font-semibold"
-                    : "text-gray-700 hover:bg-gray-100"
-                )}
-                title={isCollapsed ? item.title : undefined}
-              >
-                {item.icon}
-                {!isCollapsed && item.title}
-              </Link>
-            );
-          })}
-        </nav>
-        
-        {/* Collapse Toggle Button */}
-        <div className={cn(
-          "p-4 border-t",
-          isCollapsed ? "flex justify-center" : ""
-        )}>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleSidebar}
-            className={cn(
-              "text-gray-600 hover:text-gray-900 hover:bg-gray-100",
-              isCollapsed ? "w-10 h-10 p-0" : "w-full justify-center gap-2"
-            )}
-          >
-            {isCollapsed ? (
-              <ChevronRight className="h-5 w-5" />
-            ) : (
-              <>
-                <ChevronLeft className="h-5 w-5" />
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }

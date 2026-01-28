@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Search, Bell, LogOut } from "lucide-react";
+import { Search, Bell, LogOut, Menu } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
@@ -27,6 +27,7 @@ interface DashboardHeaderProps {
       full_name?: string;
     };
   };
+  className?: string;
 }
 
 interface UserProfileData {
@@ -35,11 +36,11 @@ interface UserProfileData {
   position: string;
 }
 
-export default function DashboardHeader({ user }: DashboardHeaderProps) {
+export default function DashboardHeader({ user, className }: DashboardHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { isCollapsed } = useSidebar();
+  const { isCollapsed, toggleMobile } = useSidebar();
   
   const [searchValue, setSearchValue] = useState("");
   const [profileData, setProfileData] = useState<UserProfileData | null>(null);
@@ -61,6 +62,10 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
   // Fetch user profile data from API
   useEffect(() => {
     const fetchUserProfile = async () => {
+      if (!user?.id) {
+        return; // Don't fetch if no user (guest mode)
+      }
+      
       try {
         // First determine user role to choose the correct API endpoint
         let apiEndpoint = "/api/auth-recruiter/me"; // default
@@ -88,6 +93,13 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
       } catch (err) {
         console.error("Error fetching user profile:", err);
         // Fallback to user prop data if API fails
+        if (user) {
+          setProfileData({
+            fullname: user.user_metadata?.full_name || user.user_metadata?.name || "User",
+            email: user.email || "No email", 
+            position: "User",
+          });
+        }
       }
     };
 
@@ -157,12 +169,27 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
   return (
     <header 
       className={cn(
-        "fixed top-0 right-0 z-30 h-16 border-b bg-white flex items-center justify-between px-8 transition-all duration-300",
-        isCollapsed ? "left-20" : "left-64"
+        "fixed top-0 z-30 h-16 border-b bg-white flex items-center justify-between px-4 sm:px-8 transition-all duration-300",
+        // Desktop: account for sidebar
+        "lg:left-0",
+        isCollapsed ? "lg:left-20" : "lg:left-64",
+        // Mobile/Tablet: full width
+        "left-0 right-0 lg:right-0",
+        className
       )}
     >
+      {/* Mobile/Tablet Hamburger Menu */}
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        className="lg:hidden"
+        onClick={toggleMobile}
+      >
+        <Menu className="h-5 w-5" />
+      </Button>
+
       {showSearch ? (
-        <div className="flex items-center gap-4 flex-1 max-w-md">
+        <div className="hidden lg:flex items-center gap-4 flex-1 max-w-md">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
@@ -174,20 +201,25 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
           </div>
         </div>
       ) : (
-        <div className="flex-1 max-w-md" />
+        <div className="hidden lg:block flex-1 max-w-md" />
       )}
 
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" className="relative">
+      {/* Mobile/Tablet: Title */}
+      <div className="lg:hidden flex-1 text-center">
+        <h1 className="text-lg font-semibold text-gray-900">TalentAI</h1>
+      </div>
+
+      <div className="flex items-center gap-2 sm:gap-4">
+        <Button variant="ghost" size="icon" className="relative hidden sm:flex">
           <Bell className="h-5 w-5 text-gray-600" />
           <span className="absolute top-2 right-2 w-2 h-2 bg-[#265BFF] rounded-full"></span>
         </Button>
 
-        <div className="flex items-center gap-3 pl-4 border-l">
-          <div className="w-10 h-10 rounded-full bg-[#265BFF] flex items-center justify-center text-white font-semibold">
+        <div className="flex items-center gap-3 pl-2 sm:pl-4 border-l">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#265BFF] flex items-center justify-center text-white font-semibold text-sm">
             {initials}
           </div>
-          <div className="text-left">
+          <div className="text-left hidden sm:block">
             <p className="text-sm font-medium text-gray-900">{userName}</p>
             <p className="text-xs text-gray-500">{userEmail}</p>
           </div>
