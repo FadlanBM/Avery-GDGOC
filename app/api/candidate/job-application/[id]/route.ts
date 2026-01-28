@@ -107,7 +107,7 @@ export async function GET(
 
     // Sort logs by date ascending (paling lama ke terbaru)
     if (application.job_application_status_log) {
-      (application.job_application_status_log as any[]).sort(
+      application.job_application_status_log.sort(
         (a, b) =>
           new Date(a.changed_at).getTime() - new Date(b.changed_at).getTime(),
       );

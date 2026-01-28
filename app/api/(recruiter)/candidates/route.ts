@@ -15,6 +15,7 @@ interface ApplicationData {
   applied_at: string;
   created_at: string;
   user_id: string;
+  asset_id: string | null;
   job: JobData | null;
 }
 
@@ -77,6 +78,7 @@ export async function GET(request: Request) {
         applied_at,
         created_at,
         user_id,
+        asset_id,
         job:job_id (
           id,
           title,
@@ -212,16 +214,16 @@ export async function GET(request: Request) {
         }
       }
 
-      // Map status to display format
-      const statusMap: Record<string, string> = {
-        applied: "New",
-        pending: "New",
-        screening: "Screening",
-        interview: "Interview",
-        offered: "Offered",
-        hired: "Hired",
-        rejected: "Rejected",
-      };
+      // // Map status to display format
+      // const statusMap: Record<string, string> = {
+      //   applied: "New",
+      //   pending: "New",
+      //   screening: "Screening",
+      //   interview: "Interview",
+      //   offered: "Offered",
+      //   hired: "Hired",
+      //   rejected: "Rejected",
+      // };
 
       return {
         id: app.id,
@@ -231,7 +233,8 @@ export async function GET(request: Request) {
         applied_role: job?.title || "Unknown Position",
         experience: experience,
         ai_match: Math.floor(Math.random() * 30) + 70, // Placeholder for AI match score
-        status: statusMap[app.status] || app.status,
+        status: app.status,
+        asset_id: app.asset_id,
         applied_date:
           app.applied_at?.split("T")[0] || app.created_at?.split("T")[0],
       };
