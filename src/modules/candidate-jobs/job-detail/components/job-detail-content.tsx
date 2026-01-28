@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
+import axiosSupabase from "@/lib/axios-supabase";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -45,13 +46,13 @@ export function JobDetailContent({ jobId }: JobDetailContentProps) {
 
     try {
       // Fetch job detail
-      const jobResponse = await axios.get(`/api/candidate/job?id=${jobId}`);
+      const jobResponse = await axiosSupabase.get(`/api/candidate/job?id=${jobId}`);
       
       if (jobResponse.data.status && jobResponse.data.data.length > 0) {
         setJob(jobResponse.data.data[0]);
 
         // Check if already applied
-        const applicationsResponse = await axios.get(
+        const applicationsResponse = await axiosSupabase.get(
           "/api/candidate/job-application?limit=1000"
         );
         
@@ -80,7 +81,7 @@ export function JobDetailContent({ jobId }: JobDetailContentProps) {
     setApplying(true);
 
     try {
-      const response = await axios.post("/api/candidate/job-application", {
+      const response = await axiosSupabase.post("/api/candidate/job-application", {
         job_id: jobId,
       });
 

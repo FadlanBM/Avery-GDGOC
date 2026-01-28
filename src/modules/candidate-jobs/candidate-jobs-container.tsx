@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import axios from "axios";
+import axiosSupabase from "@/lib/axios-supabase";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/pagination";
@@ -56,7 +57,7 @@ export function CandidateJobsContainer({ isGuest = false }: CandidateJobsContain
       
       if (!isGuest) {
         promises.push(
-          axios.get<ApplicationsResponse>("/api/candidate/job-application?limit=1000")
+          axiosSupabase.get<ApplicationsResponse>("/api/candidate/job-application?limit=1000")
         );
       }
 

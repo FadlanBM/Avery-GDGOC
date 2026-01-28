@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import axios from "axios";
+import axiosSupabase from "@/lib/axios-supabase";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -58,7 +59,7 @@ export function CandidateWorkExperience() {
 
   const fetchWorkExperiences = async () => {
     try {
-      const response = await axios.get("/api/candidate/work-experience");
+      const response = await axiosSupabase.get("/api/candidate/work-experience");
       if (response.data.status) {
         setExperiences(response.data.data || []);
       }
@@ -108,10 +109,10 @@ export function CandidateWorkExperience() {
 
     try {
       if (editingId) {
-        await axios.put(`/api/candidate/work-experience/${editingId}`, formData);
+        await axiosSupabase.put(`/api/candidate/work-experience/${editingId}`, formData);
         toast.success("Work experience updated successfully!");
       } else {
-        await axios.post("/api/candidate/work-experience", formData);
+        await axiosSupabase.post("/api/candidate/work-experience", formData);
         toast.success("Work experience added successfully!");
       }
       
@@ -134,7 +135,7 @@ export function CandidateWorkExperience() {
     
     setDeleting(id);
     try {
-      await axios.delete(`/api/candidate/work-experience/${id}`);
+      await axiosSupabase.delete(`/api/candidate/work-experience/${id}`);
       toast.success("Work experience deleted successfully!");
       fetchWorkExperiences();
     } catch (error) {

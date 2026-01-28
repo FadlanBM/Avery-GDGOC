@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import axiosSupabase from "@/lib/axios-supabase";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,7 +34,7 @@ export function CandidateCV() {
 
   const fetchCVs = async (showErrorToast = false) => {
     try {
-      const response = await axios.get("/api/candidate/cv");
+      const response = await axiosSupabase.get("/api/candidate/cv");
       if (response.data.status) {
         setCvs(response.data.data || []);
       }
@@ -72,7 +73,7 @@ export function CandidateCV() {
     formData.append("file", file);
 
     try {
-      const response = await axios.post("/api/candidate/cv", formData, {
+      const response = await axiosSupabase.post("/api/candidate/cv", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -100,7 +101,7 @@ export function CandidateCV() {
   const handleSetPrimary = async (id: string) => {
     setSettingPrimary(id);
     try {
-      await axios.put(`/api/candidate/cv/${id}`, { is_primary: true });
+      await axiosSupabase.put(`/api/candidate/cv/${id}`, { is_primary: true });
       toast.success("Primary CV updated successfully!");
       fetchCVs(true);
     } catch (error) {
@@ -116,7 +117,7 @@ export function CandidateCV() {
 
     setDeleting(id);
     try {
-      await axios.delete(`/api/candidate/cv/${id}`);
+      await axiosSupabase.delete(`/api/candidate/cv/${id}`);
       toast.success("CV deleted successfully!");
       fetchCVs(true);
     } catch (error) {

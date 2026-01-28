@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import axios from "axios";
+import axiosSupabase from "@/lib/axios-supabase";
 import { Drawer } from "./components/drawer";
 import { CandidateSettingsDrawer } from "./candidate-settings-drawer";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,7 +16,7 @@ export default function SettingsContainer() {
   useEffect(() => {
     const fetchUserRole = async () => {
       try {
-        const response = await axios.get("/api/auth/me");
+        const response = await axiosSupabase.get("/api/auth/me");
         if (response.data.status && response.data.data) {
           setUserRole(response.data.data.role);
         }

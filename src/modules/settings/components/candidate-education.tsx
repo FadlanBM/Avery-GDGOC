@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import axios from "axios";
+import axiosSupabase from "@/lib/axios-supabase";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -53,7 +54,7 @@ export function CandidateEducation() {
 
   const fetchEducations = async () => {
     try {
-      const response = await axios.get("/api/candidate/education");
+      const response = await axiosSupabase.get("/api/candidate/education");
       if (response.data.status) {
         setEducations(response.data.data || []);
       }
@@ -101,10 +102,10 @@ export function CandidateEducation() {
 
     try {
       if (editingId) {
-        await axios.put(`/api/candidate/education/${editingId}`, formData);
+        await axiosSupabase.put(`/api/candidate/education/${editingId}`, formData);
         toast.success("Education updated successfully!");
       } else {
-        await axios.post("/api/candidate/education", formData);
+        await axiosSupabase.post("/api/candidate/education", formData);
         toast.success("Education added successfully!");
       }
       
@@ -127,7 +128,7 @@ export function CandidateEducation() {
     
     setDeleting(id);
     try {
-      await axios.delete(`/api/candidate/education/${id}`);
+      await axiosSupabase.delete(`/api/candidate/education/${id}`);
       toast.success("Education deleted successfully!");
       fetchEducations();
     } catch (error) {

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
+import axiosSupabase from "@/lib/axios-supabase";
 import { toast } from "sonner";
 import { AlertCircle, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -43,7 +44,7 @@ export function MyApplicationsContainer() {
       const search = searchParams.get("search");
       if (search) params.set("search", search);
       
-      const response = await axios.get<ApplicationsResponse>(
+      const response = await axiosSupabase.get<ApplicationsResponse>(
         `/api/candidate/job-application?${params.toString()}`
       );
 
@@ -67,7 +68,7 @@ export function MyApplicationsContainer() {
     setWithdrawingId(applicationId);
 
     try {
-      const response = await axios.delete(
+      const response = await axiosSupabase.delete(
         `/api/candidate/job-application/${applicationId}`
       );
 

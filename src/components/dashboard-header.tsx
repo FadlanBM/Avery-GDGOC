@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useSidebar } from "@/lib/sidebar-context";
 import { cn } from "@/lib/utils";
 import axios from "axios";
+import axiosSupabase from "@/lib/axios-supabase";
 
 // Configuration for routes that need search
 const SEARCH_CONFIG: Record<string, { placeholder: string; paramName: string }> = {
@@ -71,7 +72,7 @@ export default function DashboardHeader({ user, className }: DashboardHeaderProp
         let apiEndpoint = "/api/auth-recruiter/me"; // default
         
         try {
-          const roleResponse = await axios.get("/api/auth/me");
+          const roleResponse = await axiosSupabase.get("/api/auth/me");
           if (roleResponse.data.status && roleResponse.data.data?.role === "registrant") {
             apiEndpoint = "/api/auth-candidate/me";
           }
@@ -79,7 +80,7 @@ export default function DashboardHeader({ user, className }: DashboardHeaderProp
           console.log("Could not determine role, defaulting to recruiter API");
         }
 
-        const response = await axios.get(apiEndpoint);
+        const response = await axiosSupabase.get(apiEndpoint);
         if (response.data.status && response.data.data) {
           // Handle different response structures between candidate and recruiter APIs
           const data = response.data.data;

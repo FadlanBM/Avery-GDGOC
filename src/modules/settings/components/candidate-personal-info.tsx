@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import axiosSupabase from "@/lib/axios-supabase";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,7 @@ export function CandidatePersonalInfo() {
 
   const fetchPersonalInfo = async () => {
     try {
-      const response = await axios.get("/api/auth-candidate/me");
+      const response = await axiosSupabase.get("/api/auth-candidate/me");
       if (response.data.status && response.data.data) {
         const data = response.data.data;
         setFormData({
@@ -62,7 +63,7 @@ export function CandidatePersonalInfo() {
     setSaving(true);
 
     try {
-      const response = await axios.put("/api/auth-candidate/me", formData);
+      const response = await axiosSupabase.put("/api/auth-candidate/me", formData);
       
       if (response.data.status) {
         toast.success("Personal information updated successfully!");
