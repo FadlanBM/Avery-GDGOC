@@ -62,118 +62,110 @@ export function Drawer({
 
   if (loading) {
     return (
-      <main className="flex-1 p-8 mt-16">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-6">
-            <Skeleton className="h-8 w-48 mb-2" />
-            <Skeleton className="h-4 w-96" />
-          </div>
-          <Card className="p-6">
-            <Skeleton className="h-12 w-full mb-4" />
-            <Skeleton className="h-12 w-full mb-4" />
-            <Skeleton className="h-12 w-full mb-4" />
-            <Skeleton className="h-12 w-full mb-4" />
-            <Skeleton className="h-12 w-full mb-4" />
-            <Skeleton className="h-12 w-full" />
-          </Card>
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-4 lg:mb-6">
+          <div className="h-6 lg:h-8 bg-gray-200 rounded animate-pulse mb-2 w-48" />
+          <div className="h-4 bg-gray-200 rounded animate-pulse w-96" />
         </div>
-      </main>
+        <Card className="p-4 lg:p-6">
+          <div className="h-12 bg-gray-200 rounded animate-pulse mb-4" />
+          <div className="h-12 bg-gray-200 rounded animate-pulse mb-4" />
+          <div className="h-12 bg-gray-200 rounded animate-pulse mb-4" />
+          <div className="h-12 bg-gray-200 rounded animate-pulse mb-4" />
+          <div className="h-12 bg-gray-200 rounded animate-pulse mb-4" />
+          <div className="h-12 bg-gray-200 rounded animate-pulse" />
+        </Card>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <main className="flex-1 p-8 mt-16">
-        <div className="max-w-7xl mx-auto">
-          <Card className="p-8 text-center">
-            <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Error Loading Candidates</h3>
-            <p className="text-neutral-600 dark:text-neutral-400 mb-4">{error}</p>
-            <Button onClick={onRetry} variant="outline">
-              Retry
-            </Button>
-          </Card>
-        </div>
-      </main>
+      <div className="max-w-7xl mx-auto">
+        <Card className="p-6 lg:p-8 text-center">
+          <XCircle className="h-10 lg:h-12 w-10 lg:w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Error Loading Candidates</h3>
+          <p className="text-neutral-600 dark:text-neutral-400 mb-4">{error}</p>
+          <Button onClick={onRetry} variant="outline">
+            Retry
+          </Button>
+        </Card>
+      </div>
     );
   }
 
   if (candidates.length === 0) {
     return (
-      <main className="flex-1 p-8 mt-16">
-        <div className="max-w-7xl mx-auto">
-          <Card className="p-8 text-center">
-            <Users className="h-12 w-12 text-neutral-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Candidates Found</h3>
-            <p className="text-neutral-600 dark:text-neutral-400">
-              No candidates have applied yet.
-            </p>
-          </Card>
-        </div>
-      </main>
+      <div className="max-w-7xl mx-auto">
+        <Card className="p-6 lg:p-8 text-center">
+          <Users className="h-10 lg:h-12 w-10 lg:w-12 text-neutral-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No Candidates Found</h3>
+          <p className="text-neutral-600 dark:text-neutral-400">
+            No candidates have applied yet.
+          </p>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <main className="flex-1 p-8 mt-16">
-      <div className="max-w-7xl mx-auto">
-        {/* Page Header */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-50 mb-1">
-                All Candidates
-              </h1>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                {totalCandidates} candidates with AI-powered screening insights
-              </p>
-            </div>
-            {/* <Button variant="outline" className="gap-2">
-              <span>Filter</span>
-              <ChevronDown className="h-4 w-4" />
-            </Button> */}
+    <div className="max-w-7xl mx-auto">
+      {/* Page Header */}
+      <div className="mb-4 lg:mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-xl lg:text-2xl font-bold text-neutral-900 dark:text-neutral-50 mb-1">
+              All Candidates
+            </h1>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">
+              {totalCandidates} candidates with AI-powered screening insights
+            </p>
           </div>
-          
-          {/* Status Filter Badge */}
-          {statusFilter && (
-            <div className="mt-4 flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Filtered by:</span>
-              <Badge variant="secondary" className="flex items-center gap-2">
-                {getStatusLabel(statusFilter)}
-                <X 
-                  className="h-3 w-3 cursor-pointer hover:text-destructive" 
-                  onClick={handleClearFilter}
-                />
-              </Badge>
-            </div>
-          )}
+          {/* <Button variant="outline" className="gap-2">
+            <span>Filter</span>
+            <ChevronDown className="h-4 w-4" />
+          </Button> */}
         </div>
-
-        {/* Table Card */}
-        <Card className="border-0 shadow-sm bg-white dark:bg-neutral-800">
-          <CandidatesTable candidates={candidates} onCandidateClick={handleCandidateClick} />
-        </Card>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-center">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={onPageChange}
-              variant="simple"
-              showFirstLast={false}
-            />
+        
+        {/* Status Filter Badge */}
+        {statusFilter && (
+          <div className="mt-4 flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Filtered by:</span>
+            <Badge variant="secondary" className="flex items-center gap-2">
+              {getStatusLabel(statusFilter)}
+              <X 
+                className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                onClick={handleClearFilter}
+              />
+            </Badge>
           </div>
         )}
-
-        {/* Candidate Detail Drawer */}
-        <CandidateDetailDrawer
-          candidate={selectedCandidate}
-          isOpen={isDrawerOpen}
-          onClose={handleCloseDrawer}
-        />
       </div>
-    </main>
+
+      {/* Table Card */}
+      <Card className="border-0 shadow-sm bg-white dark:bg-neutral-800 mb-6">
+        <CandidatesTable candidates={candidates} onCandidateClick={handleCandidateClick} />
+      </Card>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+            variant="simple"
+            showFirstLast={false}
+          />
+        </div>
+      )}
+
+      {/* Candidate Detail Drawer */}
+      <CandidateDetailDrawer
+        candidate={selectedCandidate}
+        isOpen={isDrawerOpen}
+        onClose={handleCloseDrawer}
+      />
+    </div>
   );
 }

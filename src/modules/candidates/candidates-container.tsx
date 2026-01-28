@@ -3,24 +3,12 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import axios from "axios";
-import DashboardSidebar from "@/components/dashboard-sidebar";
-import DashboardHeader from "@/components/dashboard-header";
-import { MainContent } from "@/components/main-content";
 import { Drawer } from "./components/drawer";
 import { Candidate } from "./types";
 
-interface CandidatesContainerProps {
-  user: {
-    id: string;
-    email?: string;
-    user_metadata?: {
-      name?: string;
-      full_name?: string;
-    };
-  };
-}
+interface CandidatesContainerProps {}
 
-export default function CandidatesContainer({ user }: CandidatesContainerProps) {
+export default function CandidatesContainer() {
   const searchParams = useSearchParams();
   const statusFilter = searchParams?.get("status") || "";
   const searchQuery = searchParams?.get("search") || "";
@@ -90,24 +78,16 @@ export default function CandidatesContainer({ user }: CandidatesContainerProps) 
   };
 
   return (
-    <div className="flex min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
-      <DashboardSidebar />
-      
-      <MainContent>
-        <DashboardHeader user={user} />
-        
-        <Drawer 
-          candidates={candidates}
-          loading={loading}
-          error={error}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalCandidates={totalCandidates}
-          statusFilter={statusFilter}
-          onPageChange={handlePageChange}
-          onRetry={handleRetry}
-        />
-      </MainContent>
-    </div>
+    <Drawer 
+      candidates={candidates}
+      loading={loading}
+      error={error}
+      currentPage={currentPage}
+      totalPages={totalPages}
+      totalCandidates={totalCandidates}
+      statusFilter={statusFilter}
+      onPageChange={handlePageChange}
+      onRetry={handleRetry}
+    />
   );
 }
