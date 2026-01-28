@@ -1,9 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import DashboardSidebar from "@/components/dashboard-sidebar";
-import DashboardHeader from "@/components/dashboard-header";
-import { MainContent } from "@/components/main-content";
 import { Drawer } from "./components/drawer";
 
 interface DashboardContainerProps {
@@ -141,20 +138,12 @@ export default function DashboardContainer({ user }: DashboardContainerProps) {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
-      <DashboardSidebar />
-      
-      <MainContent>
-        <DashboardHeader user={user} />
-        
-        <Drawer
-          user={user}
-          currentActivities={currentActivities}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={goToPage}
-        />
-      </MainContent>
-    </div>
+    <Drawer
+      user={user}
+      currentActivities={currentActivities}
+      currentPage={currentPage}
+      totalPages={totalPages}
+      onPageChange={goToPage}
+    />
   );
 }

@@ -57,12 +57,12 @@ export function ActivityItem({
   }, [timestamp]);
 
   return (
-    <div className="flex items-start gap-3 py-3">
-      <div className={`p-2 rounded-lg ${iconBg} shrink-0`}>
-        <Icon className={`h-5 w-5 ${iconColor}`} />
+    <div className="flex items-start gap-2 lg:gap-3 py-2 lg:py-3">
+      <div className={`p-1.5 lg:p-2 rounded-lg ${iconBg} shrink-0`}>
+        <Icon className={`h-4 w-4 lg:h-5 lg:w-5 ${iconColor}`} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-neutral-900 dark:text-neutral-100">
+        <p className="text-xs lg:text-sm text-neutral-900 dark:text-neutral-100 leading-relaxed">
           {description}
         </p>
         <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1" suppressHydrationWarning>
@@ -70,8 +70,8 @@ export function ActivityItem({
         </p>
       </div>
       {aiPowered && (
-        <Badge variant="blue" className="shrink-0">
-          AI Powered
+        <Badge variant="blue" className="shrink-0 text-xs px-2 py-1">
+          AI
         </Badge>
       )}
     </div>

@@ -37,7 +37,7 @@ export function Drawer({
   const userName = user.user_metadata?.name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
 
   return (
-    <main className="flex-1 p-8 mt-16">
+    <>
       <WelcomeSection userName={userName} />
       
       <MetricsGrid />
@@ -57,6 +57,6 @@ export function Drawer({
           />
         </CardContent>
       </Card>
-    </main>
+    </>
   );
 }

@@ -1,6 +1,10 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardContainer } from "@/modules/dashboard";
+import DashboardSidebar from "@/components/dashboard-sidebar";
+import DashboardHeader from "@/components/dashboard-header";
+import MobileNavbar from "@/components/mobile-navbar";
+import { MainContent } from "@/components/main-content";
 
 export const dynamic = "force-dynamic";
 
@@ -26,5 +30,16 @@ export default async function DashboardPage() {
     redirect("/jobs");
   }
 
-  return <DashboardContainer user={user} />;
+  return (
+    <div className="min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
+      <DashboardSidebar user={user} isGuest={false} />
+      <MobileNavbar user={user} title="Dashboard" />
+      <MainContent>
+        <DashboardHeader user={user} className="hidden lg:flex" />
+        <main className="flex-1 p-4 lg:p-8 pt-20 lg:pt-24">
+          <DashboardContainer user={user} />
+        </main>
+      </MainContent>
+    </div>
+  );
 }
