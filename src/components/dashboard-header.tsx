@@ -75,11 +75,14 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
         }
 
         const response = await axios.get(apiEndpoint);
-        if (response.data.status) {
+        if (response.data.status && response.data.data) {
+          // Handle different response structures between candidate and recruiter APIs
+          const data = response.data.data;
+          
           setProfileData({
-            fullname: response.data.data.fullname,
-            email: response.data.data.email,
-            position: response.data.data.position || "Candidate",
+            fullname: data.fullname || data.name || "User",
+            email: data.email || "No email",
+            position: data.position || "Candidate",
           });
         }
       } catch (err) {
