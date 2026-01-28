@@ -16,9 +16,10 @@ interface DashboardSidebarProps {
     email: string;
     avatar: string;
   } | null;
+  isGuest?: boolean;
 }
 
-export default function DashboardSidebar({ user }: DashboardSidebarProps) {
+export default function DashboardSidebar({ user, isGuest = false }: DashboardSidebarProps) {
   const pathname = usePathname();
   const { isCollapsed, toggleSidebar } = useSidebar();
   
@@ -34,6 +35,13 @@ export default function DashboardSidebar({ user }: DashboardSidebarProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // If guest mode, skip API call and set to candidate role
+    if (isGuest) {
+      setUserRole("registrant");
+      setIsLoading(false);
+      return;
+    }
+
     // Fetch user role to determine menu items
     const fetchUserRole = async () => {
       try {
@@ -53,7 +61,7 @@ export default function DashboardSidebar({ user }: DashboardSidebarProps) {
     };
 
     fetchUserRole();
-  }, []);
+  }, [isGuest]);
 
   // Menu items for recruiters
   const recruiterMenuItems = [

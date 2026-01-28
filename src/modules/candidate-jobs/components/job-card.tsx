@@ -10,9 +10,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 interface JobCardProps {
   job: Job;
   isApplied?: boolean;
+  isGuest?: boolean;
+  onGuestApply?: () => void;
 }
 
-export function JobCard({ job, isApplied = false }: JobCardProps) {
+export function JobCard({ job, isApplied = false, isGuest = false, onGuestApply }: JobCardProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -20,6 +22,16 @@ export function JobCard({ job, isApplied = false }: JobCardProps) {
     // Preserve current filters when navigating
     const params = new URLSearchParams(searchParams.toString());
     router.push(`/jobs/${job.id}?${params.toString()}`);
+  };
+
+  const handleApplyClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isGuest && onGuestApply) {
+      onGuestApply();
+    } else {
+      // For authenticated users, navigate to job details to apply
+      handleViewDetails();
+    }
   };
 
   const formatExperience = () => {
@@ -99,13 +111,25 @@ export function JobCard({ job, isApplied = false }: JobCardProps) {
           <div className="text-sm text-neutral-600 dark:text-neutral-400">
             {formatExperience()}
           </div>
-          <Button
-            onClick={handleViewDetails}
-            size="sm"
-            className="bg-[#265BFF] hover:bg-[#1E40AF] text-white"
-          >
-            View Details
-          </Button>
+          <div className="flex gap-2">
+            {isGuest && (
+              <Button
+                onClick={handleApplyClick}
+                size="sm"
+                className="bg-[#265BFF] hover:bg-[#1E40AF] text-white"
+              >
+                Apply Now
+              </Button>
+            )}
+            <Button
+              onClick={handleViewDetails}
+              size="sm"
+              variant={isGuest ? "outline" : "default"}
+              className={!isGuest ? "bg-[#265BFF] hover:bg-[#1E40AF] text-white" : ""}
+            >
+              View Details
+            </Button>
+          </div>
         </div>
       </div>
     </Card>

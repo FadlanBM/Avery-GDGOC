@@ -88,7 +88,11 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/api/auth-candidate/login") &&
     !request.nextUrl.pathname.startsWith("/api/auth-candidate/register") &&
     !request.nextUrl.pathname.startsWith("/api/auth-candidate/google") &&
-    !request.nextUrl.pathname.startsWith("/api/auth-recruiter/google")
+    !request.nextUrl.pathname.startsWith("/api/auth-recruiter/google") &&
+    !request.nextUrl.pathname.startsWith("/api/candidate/job") &&
+    !request.nextUrl.pathname.startsWith("/jobs") &&
+    !request.nextUrl.pathname.startsWith("/settings") &&
+    !request.nextUrl.pathname.startsWith("/my-applications")
   ) {
     // Jika permintaan datang dari API, kembalikan JSON error
     if (request.nextUrl.pathname.startsWith("/api/")) {

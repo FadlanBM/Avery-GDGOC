@@ -6,13 +6,18 @@ import axios from "axios";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/pagination";
+import LoginPromptModal from "@/components/login-prompt-modal";
 import { JobCard } from "./components/job-card";
 import { JobFilters } from "./components/job-filters";
 import { JobListSkeleton } from "./components/job-list-skeleton";
 import { EmptyState } from "./components/empty-state";
 import { Job, JobApplication, JobsResponse, ApplicationsResponse } from "./types";
 
-export function CandidateJobsContainer() {
+interface CandidateJobsContainerProps {
+  isGuest?: boolean;
+}
+
+export function CandidateJobsContainer({ isGuest = false }: CandidateJobsContainerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -22,6 +27,7 @@ export function CandidateJobsContainer() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const itemsPerPage = 9;
 
   useEffect(() => {
@@ -45,18 +51,23 @@ export function CandidateJobsContainer() {
       const search = searchParams.get("search");
       if (search) params.set("search", search);
 
-      // Fetch jobs and applications in parallel
-      const [jobsResponse, applicationsResponse] = await Promise.all([
-        axios.get<JobsResponse>(`/api/candidate/job?${params.toString()}`),
-        axios.get<ApplicationsResponse>("/api/candidate/job-application?limit=1000"), // Get all to check applied status
-      ]);
+      // For guest mode, only fetch jobs. For authenticated users, fetch both jobs and applications
+      const promises = [axios.get<JobsResponse>(`/api/candidate/job?${params.toString()}`)];
+      
+      if (!isGuest) {
+        promises.push(
+          axios.get<ApplicationsResponse>("/api/candidate/job-application?limit=1000")
+        );
+      }
+
+      const [jobsResponse, applicationsResponse] = await Promise.all(promises);
 
       if (jobsResponse.data.status) {
         setJobs(jobsResponse.data.data);
         setTotalPages(jobsResponse.data.pagination.total_pages);
       }
 
-      if (applicationsResponse.data.status) {
+      if (!isGuest && applicationsResponse?.data.status) {
         const appliedIds = new Set(
           applicationsResponse.data.data.map((app: JobApplication) => app.job_id)
         );
@@ -82,6 +93,13 @@ export function CandidateJobsContainer() {
 
   const handleClearFilters = () => {
     router.push("/jobs");
+  };
+
+  const handleApplyJob = () => {
+    if (isGuest) {
+      setShowLoginPrompt(true);
+    }
+    // For authenticated users, the apply logic is handled in JobCard component
   };
 
   const hasFilters = Array.from(searchParams.keys()).some(
@@ -142,12 +160,13 @@ export function CandidateJobsContainer() {
           </h1>
           <p className="text-neutral-600 dark:text-neutral-400 mt-1">
             Discover your next career opportunity
+            {isGuest && " (Mode Tamu)"}
           </p>
         </div>
       </div>
 
       {/* Filters */}
-      <JobFilters />
+      <JobFilters isGuest={isGuest} />
 
       {/* Job List */}
       {jobs.length === 0 ? (
@@ -159,7 +178,9 @@ export function CandidateJobsContainer() {
               <JobCard
                 key={job.id}
                 job={job}
-                isApplied={appliedJobIds.has(job.id)}
+                isApplied={!isGuest && appliedJobIds.has(job.id)}
+                isGuest={isGuest}
+                onGuestApply={handleApplyJob}
               />
             ))}
           </div>
@@ -177,6 +198,14 @@ export function CandidateJobsContainer() {
           )}
         </>
       )}
+      
+      {/* Login Prompt Modal */}
+      <LoginPromptModal
+        isOpen={showLoginPrompt}
+        onClose={() => setShowLoginPrompt(false)}
+        title="Login untuk Melamar Pekerjaan"
+        description="Silakan login terlebih dahulu untuk melamar pekerjaan ini dan menggunakan fitur lainnya."
+      />
     </div>
   );
 }

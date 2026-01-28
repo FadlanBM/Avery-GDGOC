@@ -6,29 +6,22 @@ export async function GET(request: Request) {
   try {
     const supabase = await createClient();
 
+    // Allow guest access - no authentication required for viewing jobs
     const {
       data: { session },
     } = await supabase.auth.getSession();
 
-    if (!session) {
-      return NextResponse.json(
-        {
-          status: false,
-          message: "Unauthorized: Silakan login terlebih dahulu",
-          error: { auth: ["Session not found"] },
-        },
-        { status: 401 },
+    // If user is authenticated, verify they are a candidate
+    if (session) {
+      const roleValidation = await validateUserRole(
+        supabase,
+        session?.user?.id,
+        "registrant",
       );
-    }
 
-    const roleValidation = await validateUserRole(
-      supabase,
-      session?.user?.id,
-      "registrant",
-    );
-
-    if (!roleValidation.isValid) {
-      return roleValidation.response;
+      if (!roleValidation.isValid) {
+        return roleValidation.response;
+      }
     }
 
     // Ambil parameter pagination dari URL

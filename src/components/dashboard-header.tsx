@@ -62,12 +62,24 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        const response = await axios.get("/api/auth-recruiter/me");
+        // First determine user role to choose the correct API endpoint
+        let apiEndpoint = "/api/auth-recruiter/me"; // default
+        
+        try {
+          const roleResponse = await axios.get("/api/auth/me");
+          if (roleResponse.data.status && roleResponse.data.data?.role === "registrant") {
+            apiEndpoint = "/api/auth-candidate/me";
+          }
+        } catch (roleError) {
+          console.log("Could not determine role, defaulting to recruiter API");
+        }
+
+        const response = await axios.get(apiEndpoint);
         if (response.data.status) {
           setProfileData({
             fullname: response.data.data.fullname,
             email: response.data.data.email,
-            position: response.data.data.position,
+            position: response.data.data.position || "Candidate",
           });
         }
       } catch (err) {
@@ -135,7 +147,7 @@ export default function DashboardHeader({ user }: DashboardHeaderProps) {
   const handleLogout = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push("/login");
+    router.push("/jobs");
     router.refresh();
   };
 

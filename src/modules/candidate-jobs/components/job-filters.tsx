@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
-export function JobFilters() {
+export function JobFilters({ isGuest = false }: { isGuest?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   
