@@ -6,7 +6,7 @@ import { NotificationsSection } from "./notifications-section";
 
 export function SettingsDrawer() {
   return (
-    <main className="flex-1 p-8 mt-16">
+    <main className="flex-1">
       <div className="w-full">
         <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-50 mb-2">
           Settings

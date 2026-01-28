@@ -143,7 +143,7 @@ export function ProfileSection() {
             </div>
           )}
         </div>
-        <Button onClick={handleEditProfile} className="bg-blue-600 hover:bg-blue-700 w-1/4">
+        <Button onClick={handleEditProfile} className="bg-[#265BFF] hover:bg-[#1E4ED8] w-1/4 text-xs">
           Edit Profile
         </Button>
       </CardContent>

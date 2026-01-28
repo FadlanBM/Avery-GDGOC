@@ -211,15 +211,6 @@ export default function DashboardSidebar({ user, isGuest = false }: DashboardSid
               <X className="h-4 w-4" />
             </Button>
             
-            {/* Desktop collapse button */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="hidden lg:flex"
-              onClick={toggleSidebar}
-            >
-              {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-            </Button>
           </div>
 
           {/* Navigation */}
@@ -247,6 +238,15 @@ export default function DashboardSidebar({ user, isGuest = false }: DashboardSid
               );
             })}
           </nav>
+          {/* Desktop collapse button */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="hidden lg:flex"
+              onClick={toggleSidebar}
+            >
+              {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            </Button>
         </div>
       </aside>
     </>

@@ -116,8 +116,8 @@ export function Drawer() {
 
   if (error) {
     return (
-      <main className="flex-1 p-8 mt-16">
-        <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-50 mb-4">
+      <>
+        <h1 className="text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-neutral-50 mb-4">
           Analytics
         </h1>
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
@@ -127,15 +127,15 @@ export function Drawer() {
             Try Again
           </Button>
         </div>
-      </main>
+      </>
     );
   }
 
   return (
-    <main className="flex-1 p-8 mt-16">
-      <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <>
+      <div className="mb-4 lg:mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-50">
+          <h1 className="text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-neutral-50">
             Analytics
           </h1>
           {lastUpdated && (
@@ -162,7 +162,7 @@ export function Drawer() {
         </div>
       </div>
 
-      <div className="mb-6">
+      <div className="mb-4 lg:mb-6 flex justify-start items-center">
         <DateRangeSelector
           selectedPreset={selectedPreset}
           customStartDate={customStartDate}
@@ -176,12 +176,12 @@ export function Drawer() {
       {data?.isEmpty ? (
         <OnboardingEmptyState />
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4 lg:space-y-6">
           <div data-export="metrics">
             <MetricsOverview data={data?.metrics!} isLoading={isLoading} />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
             <div data-export="funnel">
               <HiringFunnelChart data={data?.hiringFunnel!} isLoading={isLoading} />
             </div>
@@ -196,6 +196,6 @@ export function Drawer() {
           </div>
         </div>
       )}
-    </main>
+    </>
   );
 }
