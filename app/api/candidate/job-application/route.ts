@@ -2,6 +2,19 @@ import { createClient } from "@/lib/supabase/server";
 import { validateUserRole } from "@/lib/validations/auth-check";
 import { NextResponse } from "next/server";
 
+interface JobApplicationSearch {
+  job:
+    | {
+        title: string;
+        companie: { name: string } | { name: string }[] | null;
+      }
+    | {
+        title: string;
+        companie: { name: string } | { name: string }[] | null;
+      }[]
+    | null;
+}
+
 export async function GET(request: Request) {
   try {
     const supabase = await createClient();
@@ -38,7 +51,7 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const status = searchParams.get("status");
-    const searchQuery = searchParams.get("search"); // search by job title or company name
+    const searchQuery = searchParams.get("search");
 
     const currentPage = Math.max(1, page);
     const currentLimit = Math.max(1, Math.min(limit, 100));
@@ -102,14 +115,26 @@ export async function GET(request: Request) {
     let filteredData = data || [];
     if (needsClientSideSearch && searchQuery) {
       const searchLower = searchQuery.toLowerCase();
-      filteredData = filteredData.filter((app: any) => {
-        const jobTitle = app.job?.title?.toLowerCase() || "";
-        const companyName = app.job?.companie?.name?.toLowerCase() || "";
-        return jobTitle.includes(searchLower) || companyName.includes(searchLower);
-      });
+      filteredData = (filteredData as unknown as JobApplicationSearch[]).filter(
+        (app) => {
+          // Handle job as object or array
+          const jobData = Array.isArray(app.job) ? app.job[0] : app.job;
+          const jobTitle = jobData?.title?.toLowerCase() || "";
+
+          // Handle companie as object or array
+          const companyData = Array.isArray(jobData?.companie)
+            ? jobData?.companie[0]
+            : jobData?.companie;
+          const companyName = companyData?.name?.toLowerCase() || "";
+
+          return (
+            jobTitle.includes(searchLower) || companyName.includes(searchLower)
+          );
+        },
+      );
     }
 
-    const totalItems = needsClientSideSearch ? filteredData.length : (count || 0);
+    const totalItems = needsClientSideSearch ? filteredData.length : count || 0;
     const totalPages = Math.ceil(totalItems / currentLimit);
 
     return NextResponse.json({
@@ -232,7 +257,26 @@ export async function POST(request: Request) {
       );
     }
 
-    // 6. Create Job Application
+    // 6. Check if candidate has a primary CV
+    const { data: candidateCV, error: cvError } = await supabase
+      .from("candidate_cv")
+      .select("asset_id")
+      .eq("user_id", user.id)
+      .eq("is_primary", true)
+      .maybeSingle();
+
+    if (cvError || !candidateCV) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Silakan unggah dan pilih CV utama terlebih dahulu",
+          error: { validation: ["Primary CV not found"] },
+        },
+        { status: 400 },
+      );
+    }
+
+    // 7. Create Job Application
     const currentTime = new Date().toISOString();
     const { data: application, error: insertError } = await supabase
       .from("job_applications")
@@ -241,6 +285,7 @@ export async function POST(request: Request) {
         user_id: user.id,
         job_id: job_id,
         status: "applied",
+        asset_id: candidateCV.asset_id,
         applied_at: currentTime,
         created_at: currentTime,
         updated_at: currentTime,

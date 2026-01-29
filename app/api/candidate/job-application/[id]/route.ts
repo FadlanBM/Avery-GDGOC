@@ -107,7 +107,7 @@ export async function GET(
 
     // Sort logs by date ascending (paling lama ke terbaru)
     if (application.job_application_status_log) {
-      (application.job_application_status_log as any[]).sort(
+      application.job_application_status_log.sort(
         (a, b) =>
           new Date(a.changed_at).getTime() - new Date(b.changed_at).getTime(),
       );
@@ -239,6 +239,25 @@ export async function POST(
       );
     }
 
+    // 6. Check if candidate has a primary CV
+    const { data: candidateCV, error: cvError } = await supabase
+      .from("candidate_cv")
+      .select("asset_id")
+      .eq("user_id", user.id)
+      .eq("is_primary", true)
+      .maybeSingle();
+
+    if (cvError || !candidateCV) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Silakan unggah dan pilih CV utama terlebih dahulu",
+          error: { validation: ["Primary CV not found"] },
+        },
+        { status: 400 },
+      );
+    }
+
     const applicationId = crypto.randomUUID();
     const currentTime = new Date().toISOString();
     const { error: insertError } = await supabase
@@ -249,6 +268,7 @@ export async function POST(
         job_id: job_id,
         applied_at: currentTime,
         status: "panding",
+        asset_id: candidateCV.asset_id,
         created_at: currentTime,
         updated_at: currentTime,
       });
@@ -307,7 +327,7 @@ export async function POST(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -326,7 +346,7 @@ export async function DELETE(
           message: "Unauthorized: Silakan login terlebih dahulu",
           error: { auth: [authError?.message || "User not found"] },
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -334,7 +354,7 @@ export async function DELETE(
     const roleValidation = await validateUserRole(
       supabase,
       user.id,
-      "registrant"
+      "registrant",
     );
     if (!roleValidation.isValid) {
       return roleValidation.response;
@@ -355,7 +375,7 @@ export async function DELETE(
           message: "Lamaran tidak ditemukan atau bukan milik Anda",
           error: { database: ["Application not found"] },
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -368,7 +388,7 @@ export async function DELETE(
           message: "Lamaran tidak dapat dibatalkan karena sudah diproses",
           error: { validation: ["Application already processed"] },
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -387,7 +407,7 @@ export async function DELETE(
           message: "Gagal membatalkan lamaran",
           error: { database: [deleteError.message] },
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -405,7 +425,7 @@ export async function DELETE(
         message: "Terjadi kesalahan internal server",
         error: { server: [errorMessage] },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -3,12 +3,26 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import axios from "axios";
+import DashboardSidebar from "@/components/dashboard-sidebar";
+import DashboardHeader from "@/components/dashboard-header";
+import { MainContent } from "@/components/main-content";
 import { Drawer } from "./components/drawer";
 import { Candidate } from "./types";
 
-interface CandidatesContainerProps {}
+interface CandidatesContainerProps {
+  user: {
+    id: string;
+    email?: string;
+    user_metadata?: {
+      name?: string;
+      full_name?: string;
+    };
+  };
+}
 
-export default function CandidatesContainer() {
+export default function CandidatesContainer({
+  user,
+}: CandidatesContainerProps) {
   const searchParams = useSearchParams();
   const statusFilter = searchParams?.get("status") || "";
   const searchQuery = searchParams?.get("search") || "";
@@ -25,7 +39,7 @@ export default function CandidatesContainer() {
     try {
       setLoading(true);
       setError(null);
-      
+
       let url = `/api/candidates?page=${currentPage}&limit=${itemsPerPage}`;
       if (statusFilter) {
         url += `&status=${statusFilter}`;
@@ -35,17 +49,19 @@ export default function CandidatesContainer() {
       }
       
       const response = await axios.get(url);
-      
+      console.log(response);
+
       if (response.data.status) {
         let fetchedCandidates = response.data.data || [];
-        
+
         // Client-side filtering if API doesn't support status filter
         if (statusFilter && fetchedCandidates.length > 0) {
           fetchedCandidates = fetchedCandidates.filter(
-            (c: Candidate) => c.status.toLowerCase() === statusFilter.toLowerCase()
+            (c: Candidate) =>
+              c.status.toLowerCase() === statusFilter.toLowerCase(),
           );
         }
-        
+
         setCandidates(fetchedCandidates);
         setTotalPages(response.data.pagination?.totalPages || 1);
         setTotalCandidates(response.data.pagination?.totalCandidates || 0);
@@ -78,16 +94,24 @@ export default function CandidatesContainer() {
   };
 
   return (
-    <Drawer 
-      candidates={candidates}
-      loading={loading}
-      error={error}
-      currentPage={currentPage}
-      totalPages={totalPages}
-      totalCandidates={totalCandidates}
-      statusFilter={statusFilter}
-      onPageChange={handlePageChange}
-      onRetry={handleRetry}
-    />
+    <div className="flex min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
+      <DashboardSidebar />
+      
+      <MainContent>
+        <DashboardHeader user={user} />
+
+        <Drawer
+          candidates={candidates}
+          loading={loading}
+          error={error}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalCandidates={totalCandidates}
+          statusFilter={statusFilter}
+          onPageChange={handlePageChange}
+          onRetry={handleRetry}
+        />
+      </MainContent>
+    </div>
   );
 }
