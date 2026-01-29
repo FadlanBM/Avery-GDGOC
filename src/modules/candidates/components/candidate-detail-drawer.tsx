@@ -24,6 +24,22 @@ interface CandidateCV {
   is_primary: boolean;
 }
 
+interface AIAnalysisData {
+  id: string;
+  overall_match_score: number;
+  skill_match: number;
+  experience_score: number;
+  explanation_text: string;
+  explanation_json: {
+    pros: string[];
+    cons: string[];
+    missing_skills: string[];
+    matched_skills: string[];
+  };
+  model_name: string;
+  created_at: string;
+}
+
 interface CandidateDetailDrawerProps {
   candidate: Candidate | null;
   isOpen: boolean;
@@ -40,6 +56,8 @@ export function CandidateDetailDrawer({
   const [isDownloading, setIsDownloading] = useState(false);
   const [isAnalyzed, setIsAnalyzed] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [aiAnalysisData, setAiAnalysisData] = useState<AIAnalysisData | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
   console.log(candidate);
 
   useEffect(() => {
@@ -48,10 +66,14 @@ export function CandidateDetailDrawer({
       // Reset AI analysis state when opening for a new candidate
       setIsAnalyzed(false);
       setIsAnalyzing(false);
+      setAiAnalysisData(null);
+      setAnalysisError(null);
     } else {
       setCvData(null);
       setIsAnalyzed(false);
       setIsAnalyzing(false);
+      setAiAnalysisData(null);
+      setAnalysisError(null);
     }
   }, [isOpen, candidate?.user_id]);
 
@@ -97,32 +119,82 @@ export function CandidateDetailDrawer({
     }
   };
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
+    if (!cvData?.id || !candidate?.id) {
+      setAnalysisError("CV atau data kandidat tidak ditemukan");
+      return;
+    }
+
     setIsAnalyzing(true);
-    // Dummy delay to simulate AI API call - will be replaced with actual API call
-    setTimeout(() => {
-      setIsAnalyzing(false);
+    setAnalysisError(null);
+    
+    try {
+      console.log('Starting AI analysis...');
+      console.log('Candidate data:', candidate);
+      console.log('CV data:', cvData);
+      
+      // Call AI analysis API - try multiple possible paths
+      let apiUrl = `/api/ai/summary?job_application=${candidate.id}&asset_id=${candidate.asset_id || cvData.id}`;
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      // If 405, try alternative path
+      if (response.status === 405) {
+        console.log('405 error, trying alternative path...');
+        apiUrl = `/api/recruiter/ai/summary?job_application=${candidate.id}&asset_id=${candidate.asset_id || cvData.id}`;
+        
+        const altResponse = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        console.log('Alternative URL tried:', apiUrl);
+        console.log('Alternative response status:', altResponse.status);
+        
+        if (altResponse.ok) {
+          const result = await altResponse.json();
+          console.log('API Response (alternative):', result);
+          
+          if (!result.status) {
+            throw new Error(result.message || 'Gagal melakukan analisis AI');
+          }
+          
+          setAiAnalysisData(result.data);
+          setIsAnalyzed(true);
+          return;
+        }
+      }
+      
+      console.log('Request URL:', `/api/ai/summary?job_application=${candidate.id}&asset_id=${candidate.asset_id || cvData.id}`);
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+      
+      const result = await response.json();
+      console.log('API Response:', result);
+      
+      if (!response.ok || !result.status) {
+        throw new Error(result.message || 'Gagal melakukan analisis AI');
+      }
+      
+      setAiAnalysisData(result.data);
       setIsAnalyzed(true);
-    }, 2000);
+      
+    } catch (error: any) {
+      console.error('AI Analysis error:', error);
+      setAnalysisError(error.message || 'Terjadi kesalahan saat analisis AI');
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   if (!isOpen || !candidate) return null;
-
-  // Mock data for candidate details
-  const candidateDetails = {
-    location: "Austin, TX",
-    skills: ["React", "JavaScript", "Python", "Docker", "PostgreSQL"],
-    aiAnalysis: `${candidate.name.split(" ")[0]} brings ${candidate.experience} of full-stack development experience with a strong focus on React. He has successfully delivered enterprise-scale applications and shows excellent problem-solving abilities. His background includes performance optimization work that reduced load times by 60% at his previous company.`,
-    whyTheyFit: [
-      "Extensive enterprise experience",
-      "Strong full-stack capabilities",
-      "Proven track record of performance optimization",
-    ],
-    missingRequirements: [
-      "TypeScript experience is more recent",
-      "No direct team leadership experience",
-    ],
-  };
 
   return (
     <>
@@ -166,7 +238,7 @@ export function CandidateDetailDrawer({
             </div>
             <div className="flex items-center gap-2 text-xs lg:text-sm text-neutral-600 dark:text-neutral-400">
               <MapPin className="h-4 w-4" />
-              <span>{candidateDetails.location}</span>
+              <span>Location not available</span>
             </div>
           </div>
 
@@ -252,10 +324,16 @@ export function CandidateDetailDrawer({
                     onClick={handleAnalyze}
                     className="bg-blue-600 hover:bg-blue-700 text-white gap-2 text-xs lg:text-sm"
                     size="sm"
+                    disabled={!cvData || isAnalyzing}
                   >
                     <Sparkles className="h-4 w-4" />
-                    Analyze with AI
+                    {isAnalyzing ? 'Analyzing...' : 'Analyze with AI'}
                   </Button>
+                  {analysisError && (
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-2 text-center">
+                      {analysisError}
+                    </p>
+                  )}
                 </div>
               </Card>
             ) : (
@@ -294,7 +372,7 @@ export function CandidateDetailDrawer({
                         strokeWidth="6"
                         fill="none"
                         strokeDasharray={`${2 * Math.PI * 40}`}
-                        strokeDashoffset={`${2 * Math.PI * 40 * (1 - candidate.ai_match / 100)}`}
+                        strokeDashoffset={`${2 * Math.PI * 40 * (1 - (aiAnalysisData?.overall_match_score || 0) / 100)}`}
                         className="text-green-500 lg:hidden"
                         strokeLinecap="round"
                       />
@@ -306,14 +384,14 @@ export function CandidateDetailDrawer({
                         strokeWidth="8"
                         fill="none"
                         strokeDasharray={`${2 * Math.PI * 56}`}
-                        strokeDashoffset={`${2 * Math.PI * 56 * (1 - candidate.ai_match / 100)}`}
+                        strokeDashoffset={`${2 * Math.PI * 56 * (1 - (aiAnalysisData?.overall_match_score || 0) / 100)}`}
                         className="text-green-500 hidden lg:block"
                         strokeLinecap="round"
                       />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="text-xl lg:text-3xl font-bold text-neutral-900 dark:text-neutral-50">
-                        {candidate.ai_match}%
+                        {aiAnalysisData?.overall_match_score || 0}%
                       </span>
                     </div>
                   </div>
@@ -335,7 +413,7 @@ export function CandidateDetailDrawer({
                   AI Analysis Summary
                 </h3>
                 <p className="text-xs lg:text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed">
-                  {candidateDetails.aiAnalysis}
+                  {aiAnalysisData?.explanation_text || 'Tidak ada analisis tersedia'}
                 </p>
               </div>
 
@@ -345,15 +423,19 @@ export function CandidateDetailDrawer({
                   Key Skills
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {candidateDetails.skills.map((skill) => (
-                    <Badge
-                      key={skill}
-                      variant="secondary"
-                      className="bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300 border-0 px-2 lg:px-3 py-1 text-xs lg:text-sm"
-                    >
-                      {skill}
-                    </Badge>
-                  ))}
+                  {aiAnalysisData?.explanation_json?.matched_skills?.length > 0 ? (
+                    aiAnalysisData.explanation_json.matched_skills.map((skill) => (
+                      <Badge
+                        key={skill}
+                        variant="secondary"
+                        className="bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300 border-0 px-2 lg:px-3 py-1 text-xs lg:text-sm"
+                      >
+                        {skill}
+                      </Badge>
+                    ))
+                  ) : (
+                    <p className="text-xs lg:text-sm text-neutral-500">Belum ada data keahlian tersedia</p>
+                  )}
                 </div>
               </div>
 
@@ -366,17 +448,21 @@ export function CandidateDetailDrawer({
                     Why They Fit
                   </h3>
                   <ul className="space-y-2">
-                    {candidateDetails.whyTheyFit.map((item, index) => (
-                      <li
-                        key={index}
-                        className="flex items-start gap-2 text-xs lg:text-sm text-neutral-700 dark:text-neutral-300"
-                      >
-                        <span className="text-green-600 dark:text-green-400 mt-0.5">
-                          •
-                        </span>
-                        <span>{item}</span>
-                      </li>
-                    ))}
+                    {aiAnalysisData?.explanation_json?.pros?.length > 0 ? (
+                      aiAnalysisData.explanation_json.pros.map((item, index) => (
+                        <li
+                          key={index}
+                          className="flex items-start gap-2 text-xs lg:text-sm text-neutral-700 dark:text-neutral-300"
+                        >
+                          <span className="text-green-600 dark:text-green-400 mt-0.5">
+                            •
+                          </span>
+                          <span>{item}</span>
+                        </li>
+                      ))
+                    ) : (
+                      <li className="text-xs lg:text-sm text-neutral-500">Belum ada data tersedia</li>
+                    )}
                   </ul>
                 </Card>
 
@@ -387,17 +473,21 @@ export function CandidateDetailDrawer({
                     Missing Requirements
                   </h3>
                   <ul className="space-y-2">
-                    {candidateDetails.missingRequirements.map((item, index) => (
-                      <li
-                        key={index}
-                        className="flex items-start gap-2 text-xs lg:text-sm text-neutral-700 dark:text-neutral-300"
-                      >
-                        <span className="text-orange-600 dark:text-orange-400 mt-0.5">
-                          •
-                        </span>
-                        <span>{item}</span>
-                      </li>
-                    ))}
+                    {aiAnalysisData?.explanation_json?.missing_skills?.length > 0 ? (
+                      aiAnalysisData.explanation_json.missing_skills.map((item, index) => (
+                        <li
+                          key={index}
+                          className="flex items-start gap-2 text-xs lg:text-sm text-neutral-700 dark:text-neutral-300"
+                        >
+                          <span className="text-orange-600 dark:text-orange-400 mt-0.5">
+                            •
+                          </span>
+                          <span>{item}</span>
+                        </li>
+                      ))
+                    ) : (
+                      <li className="text-xs lg:text-sm text-neutral-500">Semua requirement terpenuhi</li>
+                    )}
                   </ul>
                 </Card>
               </div>
