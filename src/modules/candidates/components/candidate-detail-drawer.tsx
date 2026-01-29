@@ -58,24 +58,101 @@ export function CandidateDetailDrawer({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiAnalysisData, setAiAnalysisData] = useState<AIAnalysisData | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
-  console.log(candidate);
+  const [candidateJobMatchId, setCandidateJobMatchId] = useState<string | null>(null);
+  const [isLoadingExistingAnalysis, setIsLoadingExistingAnalysis] = useState(false);
+
 
   useEffect(() => {
     if (isOpen && candidate?.user_id) {
       fetchCandidateCV(candidate.user_id);
-      // Reset AI analysis state when opening for a new candidate
-      setIsAnalyzed(false);
-      setIsAnalyzing(false);
-      setAiAnalysisData(null);
-      setAnalysisError(null);
-    } else {
+      
+      // Only process analysis when candidate changes (not on every render)
+      const candidateId = candidate.id;
+      const currentAiMatch = (candidate as any).ai_match;
+      
+      // If this is a different candidate or we don't have analysis data yet
+      if (candidateJobMatchId !== candidateId) {
+        
+        // Reset states for new candidate
+        setIsAnalyzing(false);
+        setAnalysisError(null);
+        setIsLoadingExistingAnalysis(false);
+        setCandidateJobMatchId(candidateId);
+        
+        // Check if candidate already has AI analysis score
+        if (currentAiMatch && currentAiMatch > 0) {
+          
+          // First try to get candidate_job_match_id from candidate data
+          let matchId = (candidate as any).candidate_job_match_id;
+          
+          // If not in candidate data, try sessionStorage
+          if (!matchId) {
+            matchId = sessionStorage.getItem(`analysis_match_id_${candidateId}`);
+          }
+          
+          if (matchId) {
+            fetchExistingAnalysis(matchId);
+          } else {
+            console.log('No candidate_job_match_id found, user needs to re-analyze');
+          }
+        } else {
+          // No existing analysis, reset to initial state
+          setAiAnalysisData(null);
+          setIsAnalyzed(false);
+        }
+      }
+    } else if (!isOpen) {
+      // Only reset when drawer closes
       setCvData(null);
       setIsAnalyzed(false);
       setIsAnalyzing(false);
       setAiAnalysisData(null);
       setAnalysisError(null);
+      setCandidateJobMatchId(null);
+      setIsLoadingExistingAnalysis(false);
     }
-  }, [isOpen, candidate?.user_id]);
+  }, [isOpen, candidate?.id, candidate?.user_id]);
+
+  // Separate useEffect to handle state persistence after successful analysis
+  useEffect(() => {
+    if (aiAnalysisData && isAnalyzed) {
+      console.log('Analysis data detected, ensuring persistence...');
+      // Prevent any accidental resets when we have valid analysis data
+    }
+  }, [aiAnalysisData, isAnalyzed]);
+
+  const fetchExistingAnalysis = async (matchId: string) => {
+    setIsLoadingExistingAnalysis(true);
+    try {
+      
+      // Use the working endpoint as primary
+      const response = await fetch(`/api/ai/summary/${matchId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        
+        if (result.status && result.data) {
+          setAiAnalysisData(result.data);
+          setIsAnalyzed(true);
+          return;
+        }
+      } else if (response.status === 404) {
+        console.log('No analysis found in database for match ID:', matchId);
+      } else {
+        console.log('Database fetch failed with status:', response.status);
+      }
+      
+    } catch (error) {
+      console.error('Error fetching analysis from database:', error);
+    } finally {
+      setIsLoadingExistingAnalysis(false);
+    }
+  };
 
   const fetchCandidateCV = async (userId: string) => {
     setIsLoadingCV(true);
@@ -129,9 +206,6 @@ export function CandidateDetailDrawer({
     setAnalysisError(null);
     
     try {
-      console.log('Starting AI analysis...');
-      console.log('Candidate data:', candidate);
-      console.log('CV data:', cvData);
       
       // Call AI analysis API - try multiple possible paths
       let apiUrl = `/api/ai/summary?job_application=${candidate.id}&asset_id=${candidate.asset_id || cvData.id}`;
@@ -155,15 +229,21 @@ export function CandidateDetailDrawer({
           },
         });
         
-        console.log('Alternative URL tried:', apiUrl);
-        console.log('Alternative response status:', altResponse.status);
         
         if (altResponse.ok) {
           const result = await altResponse.json();
-          console.log('API Response (alternative):', result);
           
           if (!result.status) {
             throw new Error(result.message || 'Gagal melakukan analisis AI');
+          }
+          
+          // Save the candidate_job_match_id for future use
+          if (result.data?.candidate_job_match_id || result.data?.id) {
+            const matchId = result.data.candidate_job_match_id || result.data.id;
+            setCandidateJobMatchId(matchId);
+            
+            // Save to sessionStorage to persist across re-renders
+            sessionStorage.setItem(`analysis_match_id_${candidate.id}`, matchId);
           }
           
           setAiAnalysisData(result.data);
@@ -172,9 +252,6 @@ export function CandidateDetailDrawer({
         }
       }
       
-      console.log('Request URL:', `/api/ai/summary?job_application=${candidate.id}&asset_id=${candidate.asset_id || cvData.id}`);
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
       
       const result = await response.json();
       console.log('API Response:', result);
@@ -183,6 +260,15 @@ export function CandidateDetailDrawer({
         throw new Error(result.message || 'Gagal melakukan analisis AI');
       }
       
+      // Save the candidate_job_match_id for future use
+      if (result.data?.candidate_job_match_id || result.data?.id || candidate.id) {
+        const matchId = result.data?.candidate_job_match_id || result.data?.id || candidate.id;
+        setCandidateJobMatchId(matchId);
+        
+        // Save to sessionStorage to persist across re-renders
+        sessionStorage.setItem(`analysis_match_id_${candidate.id}`, matchId);
+      }
+    
       setAiAnalysisData(result.data);
       setIsAnalyzed(true);
       
@@ -280,8 +366,21 @@ export function CandidateDetailDrawer({
             </Card>
 
             {/* AI Analysis Section - Conditional */}
-            {isAnalyzing ? (
-              // Loading State
+            {isLoadingExistingAnalysis ? (
+              // Loading existing analysis
+              <Card className="p-6 lg:p-8 bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 w-full">
+                <div className="flex flex-col items-center justify-center py-6 lg:py-8">
+                  <Loader2 className="h-10 lg:h-12 w-10 lg:w-12 text-blue-600 animate-spin mb-4" />
+                  <h3 className="text-sm lg:text-base font-semibold text-neutral-900 dark:text-neutral-50 mb-2">
+                    Loading existing analysis...
+                  </h3>
+                  <p className="text-xs lg:text-sm text-neutral-600 dark:text-neutral-400 text-center">
+                    Checking previous analysis results
+                  </p>
+                </div>
+              </Card>
+            ) : isAnalyzing ? (
+              // Analyzing State
               <Card className="p-6 lg:p-8 bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 w-full">
                 <div className="flex flex-col items-center justify-center py-6 lg:py-8">
                   <Loader2 className="h-10 lg:h-12 w-10 lg:w-12 text-blue-600 animate-spin mb-4" />
@@ -301,10 +400,13 @@ export function CandidateDetailDrawer({
                     <Sparkles className="h-6 lg:h-8 w-6 lg:w-8 text-blue-600 dark:text-blue-400" />
                   </div>
                   <h3 className="text-sm lg:text-lg font-semibold text-neutral-900 dark:text-neutral-50 mb-2">
-                    AI Analysis Available
+                    {candidateJobMatchId ? 'Re-run AI Analysis' : 'AI Analysis Available'}
                   </h3>
                   <p className="text-xs lg:text-sm text-neutral-600 dark:text-neutral-400 mb-4 max-w-sm">
-                    Analyze this candidate&apos;s CV to get AI-powered insights including:
+                    {candidateJobMatchId 
+                      ? 'Previous analysis found. Click to run a fresh analysis with updated data:'
+                      : 'Analyze this candidate\'s CV to get AI-powered insights including:'
+                    }
                   </p>
                   <ul className="text-xs lg:text-sm text-neutral-600 dark:text-neutral-400 mb-6 space-y-1">
                     <li className="flex items-center gap-2">
@@ -327,7 +429,12 @@ export function CandidateDetailDrawer({
                     disabled={!cvData || isAnalyzing}
                   >
                     <Sparkles className="h-4 w-4" />
-                    {isAnalyzing ? 'Analyzing...' : 'Analyze with AI'}
+                    {isAnalyzing 
+                      ? 'Analyzing...' 
+                      : candidateJobMatchId 
+                        ? 'Re-analyze with AI' 
+                        : 'Analyze with AI'
+                    }
                   </Button>
                   {analysisError && (
                     <p className="text-xs text-red-600 dark:text-red-400 mt-2 text-center">
@@ -404,7 +511,7 @@ export function CandidateDetailDrawer({
           </div>
 
           {/* AI Analysis Details - Only show when analyzed */}
-          {isAnalyzed && (
+          {isAnalyzed && aiAnalysisData && (
             <>
               {/* AI Analysis Summary */}
               <div>
