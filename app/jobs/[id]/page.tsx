@@ -2,6 +2,7 @@ import { JobDetailContainer } from "@/modules/candidate-jobs/job-detail";
 import DashboardSidebar from "@/components/dashboard-sidebar";
 import DashboardHeader from "@/components/dashboard-header";
 import MobileNavbar from "@/components/mobile-navbar";
+import GuestHeader from "@/components/guest-header";
 import { MainContent } from "@/components/main-content";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -49,10 +50,11 @@ export default async function JobDetailPage({
   // Guest mode view
   return (
     <div className="min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
+      <GuestHeader title="Detail Pekerjaan" />
       <DashboardSidebar isGuest={true} />
       <MobileNavbar title="Job Details" />
       <MainContent>
-        <main className="flex-1 p-4 lg:p-8 pt-20 lg:pt-8">
+        <main className="flex-1 p-4 lg:p-8 pt-20 lg:pt-24">
           <JobDetailContainer jobId={id} isGuest={true} />
         </main>
       </MainContent>

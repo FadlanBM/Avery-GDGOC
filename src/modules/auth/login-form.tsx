@@ -170,6 +170,12 @@ function LoginFormContent() {
               Daftar di sini
             </Link>
           </div>
+          
+          <div className="text-center text-sm border-t pt-4">
+            <Link href="/jobs" className="text-gray-500 hover:text-primary">
+              Atau jelajahi sebagai tamu
+            </Link>
+          </div>
         </CardFooter>
       </form>
     </Card>

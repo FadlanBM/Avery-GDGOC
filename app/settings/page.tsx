@@ -4,11 +4,13 @@ import { SettingsContainer } from "@/modules/settings";
 import DashboardSidebar from "@/components/dashboard-sidebar";
 import DashboardHeader from "@/components/dashboard-header";
 import MobileNavbar from "@/components/mobile-navbar";
+import GuestHeader from "@/components/guest-header";
 import { MainContent } from "@/components/main-content";
 
 function GuestSettingsView() {
   return (
     <div className="min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
+      <GuestHeader title="Pengaturan" />
       <DashboardSidebar isGuest={true} />
       <MobileNavbar title="Settings" />
       <MainContent>
