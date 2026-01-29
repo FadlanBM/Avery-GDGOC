@@ -9,6 +9,13 @@ interface JobData {
   max_experience_year: number | null;
 }
 
+interface CandidateJobMatch {
+  id: string;
+  overall_match_score: number | null;
+  skill_match: number | null;
+  experience_score: number | null;
+}
+
 interface ApplicationData {
   id: string;
   status: string;
@@ -17,6 +24,7 @@ interface ApplicationData {
   user_id: string;
   asset_id: string | null;
   job: JobData | null;
+  candidate_job_match: CandidateJobMatch | null;
 }
 
 interface CandidateProfile {
@@ -33,7 +41,7 @@ interface MappedCandidate {
   email: string;
   applied_role: string;
   experience: string;
-  ai_match: number;
+  ai_match: number | null;
   status: string;
   applied_date: string;
 }
@@ -84,6 +92,12 @@ export async function GET(request: Request) {
           title,
           min_experience_year,
           max_experience_year
+        ),
+        candidate_job_match:candidate_job_match_id (
+          id,
+          overall_match_score,
+          skill_match,
+          experience_score
         )
       `,
         { count: "exact" },
@@ -225,6 +239,9 @@ export async function GET(request: Request) {
       //   rejected: "Rejected",
       // };
 
+      // Get AI match score from candidate_job_match if available
+      const aiMatchScore = app.candidate_job_match?.overall_match_score || null;
+
       return {
         id: app.id,
         user_id: app.user_id,
@@ -232,7 +249,7 @@ export async function GET(request: Request) {
         email: email,
         applied_role: job?.title || "Unknown Position",
         experience: experience,
-        ai_match: Math.floor(Math.random() * 30) + 70, // Placeholder for AI match score
+        ai_match: aiMatchScore, // Real AI match score from database
         status: app.status,
         asset_id: app.asset_id,
         applied_date:

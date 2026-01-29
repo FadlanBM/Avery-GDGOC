@@ -5,7 +5,7 @@ export interface Candidate {
   email: string;
   applied_role: string;
   experience: string;
-  ai_match: number;
+  ai_match: number | null;
   status: string;
   applied_date: string;
 }

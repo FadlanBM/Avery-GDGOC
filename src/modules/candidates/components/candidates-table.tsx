@@ -59,6 +59,9 @@ export function CandidatesTable({ candidates, onCandidateClick }: CandidatesTabl
             <th className="text-left py-3 px-2 lg:px-4 text-xs lg:text-sm font-medium text-neutral-600 dark:text-neutral-400 hidden md:table-cell">
               Experience
             </th>
+            <th className="text-left py-3 px-2 lg:px-4 text-xs lg:text-sm font-medium text-neutral-600 dark:text-neutral-400 hidden lg:table-cell">
+              AI Match
+            </th>
             <th className="text-left py-3 px-2 lg:px-4 text-xs lg:text-sm font-medium text-neutral-600 dark:text-neutral-400">
               Status
             </th>
@@ -103,6 +106,29 @@ export function CandidatesTable({ candidates, onCandidateClick }: CandidatesTabl
               {/* Experience Column - Hidden on mobile and small tablets */}
               <td className="py-3 lg:py-4 px-2 lg:px-4 text-sm lg:text-base text-neutral-700 dark:text-neutral-300 hidden md:table-cell">
                 {candidate.experience}
+              </td>
+
+              {/* AI Match Score Column - Hidden on mobile and tablets */}
+              <td className="py-3 lg:py-4 px-2 lg:px-4 hidden lg:table-cell">
+                {candidate.ai_match && candidate.ai_match > 0 ? (
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 max-w-[100px]">
+                      <div className="h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${getAIMatchColor(candidate.ai_match)} transition-all`}
+                          style={{ width: `${candidate.ai_match}%` }}
+                        />
+                      </div>
+                    </div>
+                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300 min-w-[3ch]">
+                      {candidate.ai_match}%
+                    </span>
+                  </div>
+                ) : (
+                  <Badge className="bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400 border-0 text-xs">
+                    Not analyzed
+                  </Badge>
+                )}
               </td>
 
               {/* Status Column */}

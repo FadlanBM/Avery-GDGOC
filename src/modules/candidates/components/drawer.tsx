@@ -3,11 +3,19 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, XCircle, Users, X } from "lucide-react";
+import { ChevronDown, XCircle, Users, X, ArrowUpDown, Check } from "lucide-react";
 import { CandidatesTable } from "./candidates-table";
 import { Pagination } from "@/components/pagination";
 import { CandidateDetailDrawer } from "./candidate-detail-drawer";
 import { Candidate } from "../types";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+type SortOption = "ai_match" | "newest" | "oldest" | "unanalyzed";
 
 interface DrawerProps {
   candidates: Candidate[];
@@ -34,6 +42,7 @@ export function Drawer({
 }: DrawerProps) {
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
 
   const handleCandidateClick = (candidate: Candidate) => {
     setSelectedCandidate(candidate);
@@ -59,6 +68,39 @@ export function Drawer({
     };
     return labels[status.toLowerCase()] || status;
   };
+
+  const getSortLabel = (sort: SortOption) => {
+    const labels: Record<SortOption, string> = {
+      ai_match: "AI Match Score",
+      newest: "Newest",
+      oldest: "Oldest",
+      unanalyzed: "Unanalyzed",
+    };
+    return labels[sort];
+  };
+
+  // Filter candidates if "unanalyzed" is selected
+  const filteredCandidates = sortBy === "unanalyzed" 
+    ? candidates.filter(c => !c.ai_match || c.ai_match === 0)
+    : candidates;
+
+  // Sort candidates based on selected option
+  const sortedCandidates = [...filteredCandidates].sort((a, b) => {
+    switch (sortBy) {
+      case "ai_match":
+        // Sort by AI match score (highest to lowest)
+        return (b.ai_match || 0) - (a.ai_match || 0);
+      case "newest":
+      case "unanalyzed": // Unanalyzed also sorts by newest
+        // Sort by applied date (newest first)
+        return new Date(b.applied_date).getTime() - new Date(a.applied_date).getTime();
+      case "oldest":
+        // Sort by applied date (oldest first)
+        return new Date(a.applied_date).getTime() - new Date(b.applied_date).getTime();
+      default:
+        return 0;
+    }
+  });
 
   if (loading) {
     return (
@@ -121,10 +163,42 @@ export function Drawer({
               {totalCandidates} candidates with AI-powered screening insights
             </p>
           </div>
-          {/* <Button variant="outline" className="gap-2">
-            <span>Filter</span>
-            <ChevronDown className="h-4 w-4" />
-          </Button> */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <ArrowUpDown className="h-4 w-4" />
+                <span className="hidden sm:inline">Sort by:</span>
+                <span>{getSortLabel(sortBy)}</span>
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => setSortBy("ai_match")}>
+                <div className="flex items-center justify-between w-full">
+                  <span>AI Match Score</span>
+                  {sortBy === "ai_match" && <Check className="h-4 w-4" />}
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("newest")}>
+                <div className="flex items-center justify-between w-full">
+                  <span>Newest</span>
+                  {sortBy === "newest" && <Check className="h-4 w-4" />}
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("oldest")}>
+                <div className="flex items-center justify-between w-full">
+                  <span>Oldest</span>
+                  {sortBy === "oldest" && <Check className="h-4 w-4" />}
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("unanalyzed")}>
+                <div className="flex items-center justify-between w-full">
+                  <span>Unanalyzed</span>
+                  {sortBy === "unanalyzed" && <Check className="h-4 w-4" />}
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         
         {/* Status Filter Badge */}
@@ -144,7 +218,7 @@ export function Drawer({
 
       {/* Table Card */}
       <Card className="border-0 shadow-sm bg-white dark:bg-neutral-800 mb-6">
-        <CandidatesTable candidates={candidates} onCandidateClick={handleCandidateClick} />
+        <CandidatesTable candidates={sortedCandidates} onCandidateClick={handleCandidateClick} />
       </Card>
 
       {/* Pagination */}
