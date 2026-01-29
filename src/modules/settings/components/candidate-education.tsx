@@ -164,14 +164,14 @@ export function CandidateEducation() {
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0 pb-4">
           <div>
             <CardTitle className="text-lg font-semibold">Education</CardTitle>
             <p className="text-sm text-neutral-500">Manage your educational background</p>
           </div>
           <Button
             onClick={() => handleOpenDialog()}
-            className="bg-[#265BFF] hover:bg-[#1e4acc]"
+            className="bg-[#265BFF] hover:bg-[#1e4acc] w-full sm:w-auto"
           >
             <Plus className="mr-2 h-4 w-4" />
             Add Education
@@ -199,26 +199,24 @@ export function CandidateEducation() {
             <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
               {educations.map((edu) => (
                 <div key={edu.id} className="py-5 first:pt-0 last:pb-0">
-                  <div className="flex justify-between items-start">
-                    <div className="flex gap-4 flex-1">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-50 mb-1">
-                          {edu.institution_name}
-                        </h3>
-                        <p className="text-sm text-neutral-700 dark:text-neutral-300 mb-1">
-                          {edu.field_of_study} · <span className="capitalize">{edu.level}</span>
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-50 mb-1">
+                        {edu.institution_name}
+                      </h3>
+                      <p className="text-sm text-neutral-700 dark:text-neutral-300 mb-1">
+                        {edu.field_of_study} · <span className="capitalize">{edu.level}</span>
+                      </p>
+                      <p className="text-sm text-neutral-500 mb-2">
+                        {formatDate(edu.start_date)} - {formatDate(edu.end_date)}
+                      </p>
+                      {edu.description && (
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400 whitespace-pre-line">
+                          {edu.description}
                         </p>
-                        <p className="text-sm text-neutral-500 mb-2">
-                          {formatDate(edu.start_date)} - {formatDate(edu.end_date)}
-                        </p>
-                        {edu.description && (
-                          <p className="text-sm text-neutral-600 dark:text-neutral-400 whitespace-pre-line">
-                            {edu.description}
-                          </p>
-                        )}
-                      </div>
+                      )}
                     </div>
-                    <div className="flex gap-1 ml-4">
+                    <div className="flex gap-1 self-end sm:self-start">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -251,14 +249,14 @@ export function CandidateEducation() {
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[80%] max-h-[90vh] overflow-y-auto mx-4">
           <DialogHeader>
             <DialogTitle>
               {editingId ? "Edit Education" : "Add Education"}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="institution_name">Institution Name</Label>
                 <Input
@@ -349,7 +347,7 @@ export function CandidateEducation() {
               <Button
                 type="submit"
                 disabled={saving}
-                className="bg-[#265BFF] hover:bg-[#1e4acc]"
+                className="bg-[#265BFF] hover:bg-[#1e4acc] mb-2"
               >
                 {saving ? (
                   <>

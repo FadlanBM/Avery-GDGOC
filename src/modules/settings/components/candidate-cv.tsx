@@ -159,7 +159,7 @@ export function CandidateCV() {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+      <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0 pb-4">
         <div>
           <CardTitle className="text-lg font-semibold">CV Management</CardTitle>
           <p className="text-sm text-neutral-500">Upload and manage your CVs</p>
@@ -175,7 +175,7 @@ export function CandidateCV() {
           <Button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="bg-[#265BFF] hover:bg-[#1e4acc]"
+            className="bg-[#265BFF] hover:bg-[#1e4acc] w-full sm:w-auto"
           >
             {uploading ? (
               <>
@@ -234,36 +234,37 @@ export function CandidateCV() {
                 }`}
               >
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="p-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                      <div className="p-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg flex-shrink-0">
                         <FileText className="h-6 w-6 text-neutral-600 dark:text-neutral-400" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
                           <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50 truncate">
                             {cv.file_name}
                           </h4>
                           {cv.is_primary && (
-                            <Badge className="bg-[#265BFF] hover:bg-[#265BFF]">
+                            <Badge className="bg-[#265BFF] hover:bg-[#265BFF] w-fit">
                               <Star className="h-3 w-3 mr-1 fill-current" />
                               Primary
                             </Badge>
                           )}
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-neutral-500">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-xs text-neutral-500">
                           <span>{formatFileSize(cv.file_size)}</span>
-                          <span>•</span>
+                          <span className="hidden sm:inline">•</span>
                           <span>Uploaded {formatDate(cv.created_at)}</span>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 self-end sm:self-center">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => window.open(cv.file_url, "_blank")}
                         title="Download CV"
+                        className="h-8 w-8 p-0"
                       >
                         <Download className="h-4 w-4" />
                       </Button>
@@ -274,6 +275,7 @@ export function CandidateCV() {
                           onClick={() => handleSetPrimary(cv.id)}
                           disabled={settingPrimary === cv.id}
                           title="Set as primary"
+                          className="h-8 w-8 p-0"
                         >
                           {settingPrimary === cv.id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -287,7 +289,7 @@ export function CandidateCV() {
                         size="sm"
                         onClick={() => handleDelete(cv.id)}
                         disabled={deleting === cv.id}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                         title="Delete CV"
                       >
                         {deleting === cv.id ? (
