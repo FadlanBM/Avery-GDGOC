@@ -141,7 +141,7 @@ export default function DashboardSidebar({ user, isGuest = false }: DashboardSid
     return (
       <aside className={cn(
         "fixed left-0 top-0 z-40 h-screen bg-white border-r transition-all duration-300",
-        isCollapsed ? "w-20" : "w-64"
+        isCollapsed ? "w-20" : "w-[16%]"
       )}>
         <div className="flex h-full flex-col">
           <div className="flex h-16 items-center px-6">
@@ -183,7 +183,7 @@ export default function DashboardSidebar({ user, isGuest = false }: DashboardSid
         "fixed left-0 top-0 z-50 h-screen bg-white border-r transition-all duration-300",
         // Desktop only - normal sidebar behavior
         "hidden lg:block",
-        isCollapsed ? "lg:w-20" : "lg:w-64",
+        isCollapsed ? "lg:w-20" : "lg:w-[16%]",
         // Mobile overlay when hamburger opened
         isMobileOpen && "lg:hidden block w-64"
       )}>

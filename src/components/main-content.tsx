@@ -20,7 +20,7 @@ export function MainContent({ children, className }: MainContentProps) {
       "flex-1 flex flex-col transition-all duration-300",
       // Desktop only: sidebar margin
       "ml-0 lg:ml-0",
-      isCollapsed ? "lg:ml-20" : isCandidate ? "lg:-ml-30" : "lg:ml-64",
+      isCollapsed ? isCandidate ? "lg:ml-[3%]" : "lg:ml-20" : isCandidate ? "lg:ml-[9%]" : "lg:ml-64",
       className
     )}>
       {children}

@@ -151,7 +151,7 @@ export function Drawer({
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-[100%] mx-auto">
       {/* Page Header */}
       <div className="mb-4 lg:mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
