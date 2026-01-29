@@ -173,7 +173,7 @@ export default function DashboardHeader({ user, className }: DashboardHeaderProp
         "fixed top-0 z-30 h-16 border-b bg-white flex items-center justify-between px-4 sm:px-8 transition-all duration-300",
         // Desktop: account for sidebar
         "lg:left-0",
-        isCollapsed ? "lg:left-20" : "lg:left-64",
+        isCollapsed ? "lg:left-20" : "lg:left-[16%]",
         // Mobile/Tablet: full width
         "left-0 right-0 lg:right-0",
         className
@@ -211,12 +211,8 @@ export default function DashboardHeader({ user, className }: DashboardHeaderProp
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4">
-        <Button variant="ghost" size="icon" className="relative hidden sm:flex">
-          <Bell className="h-5 w-5 text-gray-600" />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-[#265BFF] rounded-full"></span>
-        </Button>
 
-        <div className="flex items-center gap-3 pl-2 sm:pl-4 border-l">
+        <div className="flex items-center gap-3 pl-2 sm:pl-4">
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#265BFF] flex items-center justify-center text-white font-semibold text-sm">
             {initials}
           </div>
