@@ -104,7 +104,7 @@ export function Drawer({
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full mx-auto">
         <div className="mb-4 lg:mb-6">
           <div className="h-6 lg:h-8 bg-gray-200 rounded animate-pulse mb-2 w-48" />
           <div className="h-4 bg-gray-200 rounded animate-pulse w-96" />

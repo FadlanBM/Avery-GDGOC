@@ -7,6 +7,7 @@ interface JobData {
   title: string;
   min_experience_year: number | null;
   max_experience_year: number | null;
+  created_by: string;
 }
 
 interface CandidateJobMatch {
@@ -91,7 +92,8 @@ export async function GET(request: Request) {
           id,
           title,
           min_experience_year,
-          max_experience_year
+          max_experience_year,
+          created_by
         ),
         candidate_job_match:candidate_job_match_id (
           id,
@@ -257,11 +259,20 @@ export async function GET(request: Request) {
       };
     });
 
+    // Filter candidates to only show those who applied to jobs created by current user
+    // This ensures HRD users only see candidates for their own job postings
+    let filteredCandidates = candidates.filter((c) => {
+      const app = (applications as unknown as ApplicationData[]).find(
+        (a) => a.id === c.id
+      );
+      // Only include if job exists and was created by current user
+      return app?.job && app.job.created_by === session.user.id;
+    });
+
     // Apply search filter client-side if needed
-    let filteredCandidates = candidates;
     if (search) {
       const searchLower = search.toLowerCase();
-      filteredCandidates = candidates.filter(
+      filteredCandidates = filteredCandidates.filter(
         (c: MappedCandidate) =>
           c.name.toLowerCase().includes(searchLower) ||
           c.email.toLowerCase().includes(searchLower) ||
@@ -269,7 +280,8 @@ export async function GET(request: Request) {
       );
     }
 
-    const totalCandidates = totalCount || 0;
+    // Use filtered candidates count for accurate pagination
+    const totalCandidates = filteredCandidates.length;
     const totalPages = Math.ceil(totalCandidates / currentLimit);
 
     return NextResponse.json({
