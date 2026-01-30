@@ -11,11 +11,20 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Candidate } from "../types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
 
 interface CandidateCV {
   id: string;
@@ -44,12 +53,14 @@ interface CandidateDetailDrawerProps {
   candidate: Candidate | null;
   isOpen: boolean;
   onClose: () => void;
+  onStatusChange?: (candidateId: string, newStatus: string) => void;
 }
 
 export function CandidateDetailDrawer({
   candidate,
   isOpen,
   onClose,
+  onStatusChange,
 }: CandidateDetailDrawerProps) {
   const [cvData, setCvData] = useState<CandidateCV | null>(null);
   const [isLoadingCV, setIsLoadingCV] = useState(false);
@@ -60,6 +71,8 @@ export function CandidateDetailDrawer({
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [candidateJobMatchId, setCandidateJobMatchId] = useState<string | null>(null);
   const [isLoadingExistingAnalysis, setIsLoadingExistingAnalysis] = useState(false);
+  const [applicationStatus, setApplicationStatus] = useState<string>('applied');
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
 
   useEffect(() => {
@@ -113,13 +126,12 @@ export function CandidateDetailDrawer({
     }
   }, [isOpen, candidate?.id, candidate?.user_id]);
 
-  // Separate useEffect to handle state persistence after successful analysis
+  // Initialize application status when candidate changes
   useEffect(() => {
-    if (aiAnalysisData && isAnalyzed) {
-      console.log('Analysis data detected, ensuring persistence...');
-      // Prevent any accidental resets when we have valid analysis data
+    if (candidate?.status) {
+      setApplicationStatus(candidate.status);
     }
-  }, [aiAnalysisData, isAnalyzed]);
+  }, [candidate?.id, candidate?.status]);
 
   const fetchExistingAnalysis = async (matchId: string) => {
     setIsLoadingExistingAnalysis(true);
@@ -280,6 +292,90 @@ export function CandidateDetailDrawer({
     }
   };
 
+  // Get available status options based on current status
+  const getAvailableStatusOptions = () => {
+    switch (applicationStatus) {
+      case 'applied':
+        return [
+          { value: 'applied', label: 'Applied', color: 'bg-blue-100 text-blue-700' },
+          { value: 'interview', label: 'Interview', color: 'bg-orange-100 text-orange-700' },
+          { value: 'rejected', label: 'Rejected', color: 'bg-red-100 text-red-700' },
+        ];
+      case 'interview':
+        return [
+          { value: 'interview', label: 'Interview', color: 'bg-orange-100 text-orange-700' },
+          { value: 'hired', label: 'Hired', color: 'bg-green-100 text-green-700' },
+          { value: 'rejected', label: 'Rejected', color: 'bg-red-100 text-red-700' },
+        ];
+      case 'hired':
+        return [
+          { value: 'hired', label: 'Hired', color: 'bg-green-100 text-green-700' },
+        ];
+      case 'rejected':
+        return [
+          { value: 'rejected', label: 'Rejected', color: 'bg-red-100 text-red-700' },
+        ];
+      default:
+        return [
+          { value: 'applied', label: 'Applied', color: 'bg-blue-100 text-blue-700' },
+          { value: 'interview', label: 'Interview', color: 'bg-orange-100 text-orange-700' },
+          { value: 'hired', label: 'Hired', color: 'bg-green-100 text-green-700' },
+          { value: 'rejected', label: 'Rejected', color: 'bg-red-100 text-red-700' },
+        ];
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'applied':
+        return 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300';
+      case 'interview':
+        return 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300';
+      case 'hired':
+        return 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300';
+      case 'rejected':
+        return 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300';
+      default:
+        return 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300';
+    }
+  };
+
+  const handleStatusChange = async (newStatus: string) => {
+    if (!candidate?.id || newStatus === applicationStatus) return;
+    
+    setIsUpdatingStatus(true);
+    try {
+      const response = await fetch(`/api/job/job-application/${candidate.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok && result.status) {
+        setApplicationStatus(newStatus);
+        // Notify parent component about the status change
+        if (onStatusChange && candidate?.id) {
+          onStatusChange(candidate.id, newStatus);
+        }
+        toast.success('Status berhasil diubah', {
+          description: `Status lamaran diubah menjadi ${newStatus}`,
+        });
+      } else {
+        toast.error('Gagal mengubah status', {
+          description: result.message || 'Terjadi kesalahan',
+        });
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast.error('Gagal mengubah status', {
+        description: 'Terjadi kesalahan saat menghubungi server',
+      });
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
   if (!isOpen || !candidate) return null;
 
   return (
@@ -290,28 +386,57 @@ export function CandidateDetailDrawer({
       {/* Drawer */}
       <div className="fixed right-0 top-0 h-full w-full lg:w-[680px] bg-white dark:bg-neutral-900 shadow-2xl z-50 overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-700 p-4 lg:p-6 flex items-center justify-between z-10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-[#265BFF] flex items-center justify-center text-white text-sm lg:text-base font-medium">
-              {candidate.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+        <div className="sticky top-0 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-700 p-4 lg:p-6 z-10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-[#265BFF] flex items-center justify-center text-white text-sm lg:text-base font-medium">
+                {candidate.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+              </div>
+              <div>
+                <h2 className="text-lg lg:text-xl font-semibold text-neutral-900 dark:text-neutral-50">
+                  {candidate.name}
+                </h2>
+                <p className="text-xs lg:text-sm text-neutral-600 dark:text-neutral-400">
+                  {candidate.applied_role}
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg lg:text-xl font-semibold text-neutral-900 dark:text-neutral-50">
-                {candidate.name}
-              </h2>
-              <p className="text-xs lg:text-sm text-neutral-600 dark:text-neutral-400">
-                {candidate.applied_role}
-              </p>
-            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="h-8 w-8"
+            >
+              <X className="h-4 w-4 lg:h-5 lg:w-5" />
+            </Button>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="h-8 w-8"
-          >
-            <X className="h-4 w-4 lg:h-5 lg:w-5" />
-          </Button>
+          
+          {/* Status Dropdown */}
+          <div className="mt-4 flex items-center gap-3">
+            <span className="text-sm text-neutral-600 dark:text-neutral-400">Status:</span>
+            <Select
+              value={applicationStatus}
+              onValueChange={handleStatusChange}
+              disabled={isUpdatingStatus || applicationStatus === 'hired' || applicationStatus === 'rejected'}
+            >
+              <SelectTrigger className={`w-[140px] h-8 text-sm ${getStatusColor(applicationStatus)}`}>
+                {isUpdatingStatus ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <SelectValue />
+                )}
+              </SelectTrigger>
+              <SelectContent>
+                {getAvailableStatusOptions().map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${option.color}`}>
+                      {option.label}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Content */}

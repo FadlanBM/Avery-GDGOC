@@ -186,3 +186,154 @@ export async function GET(
     );
   }
 }
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Unauthorized: Silakan login terlebih dahulu",
+          error: { auth: [authError?.message || "User not found"] },
+        },
+        { status: 401 },
+      );
+    }
+
+    // Role Check (Must be recruiter or admin)
+    const roleValidation = await validateUserRole(supabase, user.id, [
+      "recruiter",
+      "admin",
+    ]);
+    if (!roleValidation.isValid) {
+      return roleValidation.response;
+    }
+
+    const { id } = await params;
+    const validation = paramsSchema.safeParse({ id });
+
+    if (!validation.success) {
+      const flattenedErrors = validation.error.flatten().fieldErrors;
+      const firstErrorMessage = validation.error.issues[0].message;
+      return NextResponse.json(
+        {
+          status: false,
+          message: firstErrorMessage,
+          error: flattenedErrors,
+        },
+        { status: 400 },
+      );
+    }
+
+    // Parse request body
+    const body = await request.json();
+    const { status: newStatus } = body;
+
+    // Validate status value
+    const allowedStatuses = ["applied", "interview", "hired", "rejected"];
+    if (!newStatus || !allowedStatuses.includes(newStatus)) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Status tidak valid",
+          error: { status: [`Status harus salah satu dari: ${allowedStatuses.join(", ")}`] },
+        },
+        { status: 400 },
+      );
+    }
+
+    // Get current application to check if it exists
+    const { data: currentApplication, error: fetchError } = await supabase
+      .from("job_applications")
+      .select("id, status")
+      .eq("id", validation.data.id)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error("Error fetching application:", fetchError.message);
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Gagal mengambil data lamaran",
+          error: { database: [fetchError.message] },
+        },
+        { status: 400 },
+      );
+    }
+
+    if (!currentApplication) {
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Data lamaran tidak ditemukan",
+          error: { database: ["Record not found"] },
+        },
+        { status: 404 },
+      );
+    }
+
+    // Update application status
+    const { data: updatedApplication, error: updateError } = await supabase
+      .from("job_applications")
+      .update({
+        status: newStatus,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", validation.data.id)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error("Error updating application status:", updateError.message);
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Gagal mengubah status lamaran",
+          error: { database: [updateError.message] },
+        },
+        { status: 400 },
+      );
+    }
+
+    // Log status change
+    const { error: logError } = await supabase
+      .from("job_application_status_log")
+      .insert({
+        job_application_id: validation.data.id,
+        message_status: `Status changed from ${currentApplication.status} to ${newStatus}`,
+        changed_by: user.id,
+        changed_at: new Date().toISOString(),
+      });
+
+    if (logError) {
+      console.error("Error logging status change:", logError.message);
+      // Don't fail the request, just log the error
+    }
+
+    return NextResponse.json({
+      status: true,
+      message: "Status lamaran berhasil diubah",
+      data: updatedApplication,
+    });
+  } catch (error) {
+    console.error("Update application status error:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Internal Server Error";
+    return NextResponse.json(
+      {
+        status: false,
+        message: "Terjadi kesalahan internal server",
+        error: { server: [errorMessage] },
+      },
+      { status: 500 },
+    );
+  }
+}

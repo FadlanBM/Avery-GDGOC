@@ -54,6 +54,15 @@ export function Drawer({
     setSelectedCandidate(null);
   };
 
+  const handleStatusChange = (candidateId: string, newStatus: string) => {
+    // Update the selected candidate's status in local state
+    if (selectedCandidate && selectedCandidate.id === candidateId) {
+      setSelectedCandidate({ ...selectedCandidate, status: newStatus });
+    }
+    // Trigger a refresh of the candidates list by calling onRetry
+    onRetry();
+  };
+
   const handleClearFilter = () => {
     window.location.href = "/candidates";
   };
@@ -138,7 +147,7 @@ export function Drawer({
 
   if (candidates.length === 0) {
     return (
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full h-[720px] mx-auto">
         <Card className="p-6 lg:p-8 text-center">
           <Users className="h-10 lg:h-12 w-10 lg:w-12 text-neutral-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold mb-2">No Candidates Found</h3>
@@ -239,6 +248,7 @@ export function Drawer({
         candidate={selectedCandidate}
         isOpen={isDrawerOpen}
         onClose={handleCloseDrawer}
+        onStatusChange={handleStatusChange}
       />
     </div>
   );
