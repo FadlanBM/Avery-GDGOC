@@ -81,7 +81,7 @@ export function CandidateDetailDrawer({
       
       // Only process analysis when candidate changes (not on every render)
       const candidateId = candidate.id;
-      const currentAiMatch = (candidate as any).ai_match;
+      const currentAiMatch = candidate.ai_match;
       
       // If this is a different candidate or we don't have analysis data yet
       if (candidateJobMatchId !== candidateId) {
@@ -96,7 +96,7 @@ export function CandidateDetailDrawer({
         if (currentAiMatch && currentAiMatch > 0) {
           
           // First try to get candidate_job_match_id from candidate data
-          let matchId = (candidate as any).candidate_job_match_id;
+          let matchId = candidate.candidate_job_match_id;
           
           // If not in candidate data, try sessionStorage
           if (!matchId) {

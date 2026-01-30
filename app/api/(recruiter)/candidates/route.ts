@@ -43,6 +43,7 @@ interface MappedCandidate {
   applied_role: string;
   experience: string;
   ai_match: number | null;
+  candidate_job_match_id: string | null;
   status: string;
   applied_date: string;
 }
@@ -243,6 +244,7 @@ export async function GET(request: Request) {
 
       // Get AI match score from candidate_job_match if available
       const aiMatchScore = app.candidate_job_match?.overall_match_score || null;
+      const candidateJobMatchId = app.candidate_job_match?.id || null;
 
       return {
         id: app.id,
@@ -252,6 +254,7 @@ export async function GET(request: Request) {
         applied_role: job?.title || "Unknown Position",
         experience: experience,
         ai_match: aiMatchScore, // Real AI match score from database
+        candidate_job_match_id: candidateJobMatchId, // ID to fetch full analysis
         status: app.status,
         asset_id: app.asset_id,
         applied_date:
