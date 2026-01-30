@@ -34,7 +34,7 @@ export function HiringFunnelChart({ data, isLoading }: HiringFunnelChartProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Skeleton for each funnel stage */}
-          {[...Array(5)].map((_, i) => (
+          {[...Array(4)].map((_, i) => (
             <div key={i} className="space-y-2">
               <div className="flex items-center justify-between">
                 <Skeleton className="h-4 w-24" />
@@ -52,7 +52,6 @@ export function HiringFunnelChart({ data, isLoading }: HiringFunnelChartProps) {
     { key: "applied", label: STAGE_LABELS.applied, count: data.applied },
     { key: "screening", label: STAGE_LABELS.screening, count: data.screening },
     { key: "interview", label: STAGE_LABELS.interview, count: data.interview },
-    { key: "offer", label: STAGE_LABELS.offer, count: data.offer },
     { key: "hired", label: STAGE_LABELS.hired, count: data.hired },
   ];
 
