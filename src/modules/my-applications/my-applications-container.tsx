@@ -5,13 +5,20 @@ import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import axiosSupabase from "@/lib/axios-supabase";
 import { toast } from "sonner";
-import { AlertCircle, Briefcase } from "lucide-react";
+import { AlertCircle, Briefcase, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Pagination } from "@/components/pagination";
 import { ApplicationCard } from "./components/application-card";
 import { JobApplication, ApplicationsResponse } from "@/modules/candidate-jobs/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function MyApplicationsContainer() {
   const router = useRouter();
@@ -23,15 +30,18 @@ export function MyApplicationsContainer() {
   const [withdrawingId, setWithdrawingId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const itemsPerPage = 10;
 
   useEffect(() => {
     const page = parseInt(searchParams.get("page") || "1");
+    const status = searchParams.get("status") || "all";
     setCurrentPage(page);
-    fetchApplications(page);
+    setStatusFilter(status);
+    fetchApplications(page, status);
   }, [searchParams]);
 
-  const fetchApplications = async (page: number) => {
+  const fetchApplications = async (page: number, status?: string) => {
     setLoading(true);
     setError(null);
 
@@ -43,6 +53,11 @@ export function MyApplicationsContainer() {
       
       const search = searchParams.get("search");
       if (search) params.set("search", search);
+      
+      // Add status filter if not "all"
+      if (status && status !== "all") {
+        params.set("status", status);
+      }
       
       const response = await axiosSupabase.get<ApplicationsResponse>(
         `/api/candidate/job-application?${params.toString()}`
@@ -76,7 +91,7 @@ export function MyApplicationsContainer() {
         toast.success("Application withdrawn successfully");
         
         // Refresh the list
-        fetchApplications(currentPage);
+        fetchApplications(currentPage, statusFilter);
       }
     } catch (err) {
       console.error("Error withdrawing application:", err);
@@ -95,7 +110,18 @@ export function MyApplicationsContainer() {
   };
 
   const handlePageChange = (page: number) => {
-    router.push(`/my-applications?page=${page}`);
+    const params = new URLSearchParams();
+    params.set("page", page.toString());
+    if (statusFilter !== "all") params.set("status", statusFilter);
+    router.push(`/my-applications?${params.toString()}`);
+  };
+
+  const handleStatusChange = (status: string) => {
+    setStatusFilter(status);
+    const params = new URLSearchParams();
+    params.set("page", "1"); // Reset to page 1 when filter changes
+    if (status !== "all") params.set("status", status);
+    router.push(`/my-applications?${params.toString()}`);
   };
 
   const handleBrowseJobs = () => {
@@ -153,7 +179,7 @@ export function MyApplicationsContainer() {
             {error}
           </p>
           <Button
-            onClick={() => fetchApplications(currentPage)}
+            onClick={() => fetchApplications(currentPage, statusFilter)}
             className="bg-[#265BFF] hover:bg-[#1E40AF] text-white"
           >
             Try Again
@@ -166,7 +192,7 @@ export function MyApplicationsContainer() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-50">
             My Applications
@@ -175,12 +201,30 @@ export function MyApplicationsContainer() {
             Track your job applications and their status
           </p>
         </div>
-        <Button
-          onClick={handleBrowseJobs}
-          className="bg-[#265BFF] hover:bg-[#1E40AF] text-white"
-        >
-          Browse Jobs
-        </Button>
+        <div className="flex items-center gap-3">
+          {/* Status Filter */}
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-neutral-500" />
+            <Select value={statusFilter} onValueChange={handleStatusChange}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="applied">Applied</SelectItem>
+                <SelectItem value="interview">Interview</SelectItem>
+                <SelectItem value="hired">Hired</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            onClick={handleBrowseJobs}
+            className="bg-[#265BFF] hover:bg-[#1E40AF] text-white"
+          >
+            Browse Jobs
+          </Button>
+        </div>
       </div>
 
       {/* Applications List */}
