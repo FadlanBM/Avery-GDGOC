@@ -93,23 +93,25 @@ export function ApplicationCard({
           )}
         </div>
 
-        {/* Actions */}
-        <div className="pt-4 border-t border-neutral-200 dark:border-neutral-700">
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-800"
-            disabled={isWithdrawing}
-            onClick={() => {
-              if (window.confirm(`Are you sure you want to withdraw your application for ${application.job.title}? This action cannot be undone.`)) {
-                onWithdraw(application.id);
-              }
-            }}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Withdraw Application
-          </Button>
-        </div>
+        {/* Actions - Only show withdraw for non-terminal statuses */}
+        {!['rejected', 'hired'].includes(application.status.toLowerCase()) && (
+          <div className="pt-4 border-t border-neutral-200 dark:border-neutral-700">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-800"
+              disabled={isWithdrawing}
+              onClick={() => {
+                if (window.confirm(`Are you sure you want to withdraw your application for ${application.job.title}? This action cannot be undone.`)) {
+                  onWithdraw(application.id);
+                }
+              }}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Withdraw Application
+            </Button>
+          </div>
+        )}
       </div>
     </Card>
   );
