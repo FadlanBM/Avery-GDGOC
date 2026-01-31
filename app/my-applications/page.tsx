@@ -6,6 +6,7 @@ import GuestHeader from "@/components/guest-header";
 import { MainContent } from "@/components/main-content";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { validateUserRole } from "@/lib/validations/auth-check";
 
 function GuestMyApplicationsView() {
   return (
@@ -24,13 +25,13 @@ function GuestMyApplicationsView() {
                 Silakan login untuk melihat status lamaran pekerjaan Anda.
               </p>
               <div className="space-y-4 max-w-md mx-auto">
-                <a 
+                <a
                   href="/login"
                   className="block w-full bg-[#265BFF] hover:bg-[#1E40AF] text-white px-6 py-3 rounded-lg font-medium transition-colors"
                 >
                   Login sebagai Kandidat
                 </a>
-                <a 
+                <a
                   href="/recruiter/login"
                   className="block w-full border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-lg font-medium transition-colors"
                 >
@@ -56,20 +57,20 @@ export default async function MyApplicationsPage() {
   }
 
   // Check user role - only allow candidates
-  const { data: userRole } = await supabase
-    .from("user_roles")
-    .select("roles(name)")
-    .eq("user_id", user.id)
-    .single();
+  const roleValidation = await validateUserRole(
+    supabase,
+    user.id,
+    "registrant",
+  );
 
   // If user is not a candidate, redirect to dashboard
-  if (userRole?.roles?.name !== "registrant") {
+  if (!roleValidation.isValid) {
     redirect("/dashboard");
   }
 
   return (
     <div className="min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
-      <DashboardSidebar user={user} isGuest={false} />
+      <DashboardSidebar isGuest={false} />
       <MobileNavbar user={user} title="My Applications" />
       <MainContent>
         <DashboardHeader user={user} className="hidden lg:flex" />

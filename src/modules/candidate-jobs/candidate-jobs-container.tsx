@@ -12,13 +12,20 @@ import { JobCard } from "./components/job-card";
 import { JobFilters } from "./components/job-filters";
 import { JobListSkeleton } from "./components/job-list-skeleton";
 import { EmptyState } from "./components/empty-state";
-import { Job, JobApplication, JobsResponse, ApplicationsResponse } from "./types";
+import {
+  Job,
+  JobApplication,
+  JobsResponse,
+  ApplicationsResponse,
+} from "./types";
 
 interface CandidateJobsContainerProps {
   isGuest?: boolean;
 }
 
-export function CandidateJobsContainer({ isGuest = false }: CandidateJobsContainerProps) {
+export function CandidateJobsContainer({
+  isGuest = false,
+}: CandidateJobsContainerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -53,11 +60,20 @@ export function CandidateJobsContainer({ isGuest = false }: CandidateJobsContain
       if (search) params.set("search", search);
 
       // For guest mode, only fetch jobs. For authenticated users, fetch both jobs and applications
-      const promises = [axios.get<JobsResponse>(`/api/candidate/job?${params.toString()}`)];
-      
+      const promises: [
+        Promise<import("axios").AxiosResponse<JobsResponse>>,
+        (
+          | Promise<import("axios").AxiosResponse<ApplicationsResponse>>
+          | undefined
+        ),
+      ] = [
+        axios.get<JobsResponse>(`/api/candidate/job?${params.toString()}`),
+        undefined,
+      ];
+
       if (!isGuest) {
-        promises.push(
-          axiosSupabase.get<ApplicationsResponse>("/api/candidate/job-application?limit=1000")
+        promises[1] = axiosSupabase.get<ApplicationsResponse>(
+          "/api/candidate/job-application?limit=1000",
         );
       }
 
@@ -70,7 +86,9 @@ export function CandidateJobsContainer({ isGuest = false }: CandidateJobsContain
 
       if (!isGuest && applicationsResponse?.data.status) {
         const appliedIds = new Set(
-          applicationsResponse.data.data.map((app: JobApplication) => app.job_id)
+          applicationsResponse.data.data.map(
+            (app: JobApplication) => app.job_id,
+          ),
         );
         setAppliedJobIds(appliedIds);
       }
@@ -104,7 +122,7 @@ export function CandidateJobsContainer({ isGuest = false }: CandidateJobsContain
   };
 
   const hasFilters = Array.from(searchParams.keys()).some(
-    (key) => key !== "page" && key !== "limit"
+    (key) => key !== "page" && key !== "limit",
   );
 
   if (loading) {
@@ -171,7 +189,10 @@ export function CandidateJobsContainer({ isGuest = false }: CandidateJobsContain
 
       {/* Job List */}
       {jobs.length === 0 ? (
-        <EmptyState hasFilters={hasFilters} onClearFilters={handleClearFilters} />
+        <EmptyState
+          hasFilters={hasFilters}
+          onClearFilters={handleClearFilters}
+        />
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -199,7 +220,7 @@ export function CandidateJobsContainer({ isGuest = false }: CandidateJobsContain
           )}
         </>
       )}
-      
+
       {/* Login Prompt Modal */}
       <LoginPromptModal
         isOpen={showLoginPrompt}

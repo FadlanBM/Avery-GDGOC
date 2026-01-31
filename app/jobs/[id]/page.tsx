@@ -6,6 +6,7 @@ import GuestHeader from "@/components/guest-header";
 import { MainContent } from "@/components/main-content";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { validateUserRole } from "@/lib/validations/auth-check";
 
 export default async function JobDetailPage({
   params,
@@ -21,26 +22,25 @@ export default async function JobDetailPage({
 
   // If user is authenticated, check their role
   if (user) {
-    const { data: userRole } = await supabase
-      .from("user_roles")
-      .select("roles(name)")
-      .eq("user_id", user.id)
-      .single();
-
-    // If user is not a candidate, redirect to dashboard
-    if (userRole?.roles?.name !== "registrant") {
+    const roleValidation = await validateUserRole(
+      supabase,
+      user.id,
+      "recruiter",
+    );
+    // If user is a candidate (registrant), redirect to jobs page
+    if (!roleValidation.isValid) {
       redirect("/dashboard");
     }
 
     // Authenticated candidate view
     return (
       <div className="min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
-        <DashboardSidebar user={user} isGuest={false} />
+        <DashboardSidebar isGuest={false} />
         <MobileNavbar user={user} title="Job Details" />
         <MainContent>
           <DashboardHeader user={user} className="hidden lg:flex" />
           <main className="flex-1 p-4 lg:p-8 pt-20 lg:pt-24">
-            <JobDetailContainer jobId={id} isGuest={false} />
+            <JobDetailContainer jobId={id} />
           </main>
         </MainContent>
       </div>
@@ -55,7 +55,7 @@ export default async function JobDetailPage({
       <MobileNavbar title="Job Details" />
       <MainContent>
         <main className="flex-1 p-4 lg:p-8 pt-20 lg:pt-24">
-          <JobDetailContainer jobId={id} isGuest={true} />
+          <JobDetailContainer jobId={id} />
         </main>
       </MainContent>
     </div>

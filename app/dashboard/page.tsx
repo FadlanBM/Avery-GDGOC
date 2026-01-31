@@ -5,6 +5,7 @@ import DashboardSidebar from "@/components/dashboard-sidebar";
 import DashboardHeader from "@/components/dashboard-header";
 import MobileNavbar from "@/components/mobile-navbar";
 import { MainContent } from "@/components/main-content";
+import { validateUserRole } from "@/lib/validations/auth-check";
 
 export const dynamic = "force-dynamic";
 
@@ -18,21 +19,16 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  // Check user role
-  const { data: userRole } = await supabase
-    .from("user_roles")
-    .select("roles(name)")
-    .eq("user_id", user.id)
-    .single();
-
   // If user is a candidate (registrant), redirect to jobs page
-  if (userRole?.roles?.name === "registrant") {
+  const roleValidation = await validateUserRole(supabase, user.id, "recruiter");
+  // If user is a candidate (registrant), redirect to jobs page
+  if (!roleValidation.isValid) {
     redirect("/jobs");
   }
 
   return (
     <div className="min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
-      <DashboardSidebar user={user} isGuest={false} />
+      <DashboardSidebar isGuest={false} />
       <MobileNavbar user={user} title="Dashboard" />
       <MainContent>
         <DashboardHeader user={user} className="hidden lg:flex" />

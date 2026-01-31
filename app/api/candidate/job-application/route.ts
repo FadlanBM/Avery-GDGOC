@@ -115,23 +115,22 @@ export async function GET(request: Request) {
     let filteredData = data || [];
     if (needsClientSideSearch && searchQuery) {
       const searchLower = searchQuery.toLowerCase();
-      filteredData = (filteredData as unknown as JobApplicationSearch[]).filter(
-        (app) => {
-          // Handle job as object or array
-          const jobData = Array.isArray(app.job) ? app.job[0] : app.job;
-          const jobTitle = jobData?.title?.toLowerCase() || "";
+      filteredData = filteredData.filter((item) => {
+        const app = item as unknown as JobApplicationSearch;
+        // Handle job as object or array
+        const jobData = Array.isArray(app.job) ? app.job[0] : app.job;
+        const jobTitle = jobData?.title?.toLowerCase() || "";
 
-          // Handle companie as object or array
-          const companyData = Array.isArray(jobData?.companie)
-            ? jobData?.companie[0]
-            : jobData?.companie;
-          const companyName = companyData?.name?.toLowerCase() || "";
+        // Handle companie as object or array
+        const companyData = Array.isArray(jobData?.companie)
+          ? jobData?.companie[0]
+          : jobData?.companie;
+        const companyName = companyData?.name?.toLowerCase() || "";
 
-          return (
-            jobTitle.includes(searchLower) || companyName.includes(searchLower)
-          );
-        },
-      );
+        return (
+          jobTitle.includes(searchLower) || companyName.includes(searchLower)
+        );
+      });
     }
 
     const totalItems = needsClientSideSearch ? filteredData.length : count || 0;

@@ -1,9 +1,15 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, XCircle, Users, X, ArrowUpDown, Check } from "lucide-react";
+import {
+  ChevronDown,
+  XCircle,
+  Users,
+  X,
+  ArrowUpDown,
+  Check,
+} from "lucide-react";
 import { CandidatesTable } from "./candidates-table";
 import { Pagination } from "@/components/pagination";
 import { CandidateDetailDrawer } from "./candidate-detail-drawer";
@@ -40,7 +46,9 @@ export function Drawer({
   onPageChange,
   onRetry,
 }: DrawerProps) {
-  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(
+    null,
+  );
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
 
@@ -89,9 +97,10 @@ export function Drawer({
   };
 
   // Filter candidates if "unanalyzed" is selected
-  const filteredCandidates = sortBy === "unanalyzed" 
-    ? candidates.filter(c => !c.ai_match || c.ai_match === 0)
-    : candidates;
+  const filteredCandidates =
+    sortBy === "unanalyzed"
+      ? candidates.filter((c) => !c.ai_match || c.ai_match === 0)
+      : candidates;
 
   // Sort candidates based on selected option
   const sortedCandidates = [...filteredCandidates].sort((a, b) => {
@@ -102,10 +111,16 @@ export function Drawer({
       case "newest":
       case "unanalyzed": // Unanalyzed also sorts by newest
         // Sort by applied date (newest first)
-        return new Date(b.applied_date).getTime() - new Date(a.applied_date).getTime();
+        return (
+          new Date(b.applied_date).getTime() -
+          new Date(a.applied_date).getTime()
+        );
       case "oldest":
         // Sort by applied date (oldest first)
-        return new Date(a.applied_date).getTime() - new Date(b.applied_date).getTime();
+        return (
+          new Date(a.applied_date).getTime() -
+          new Date(b.applied_date).getTime()
+        );
       default:
         return 0;
     }
@@ -135,7 +150,9 @@ export function Drawer({
       <div className="max-w-7xl mx-auto">
         <Card className="p-6 lg:p-8 text-center">
           <XCircle className="h-10 lg:h-12 w-10 lg:w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Error Loading Candidates</h3>
+          <h3 className="text-lg font-semibold mb-2">
+            Error Loading Candidates
+          </h3>
           <p className="text-neutral-600 dark:text-neutral-400 mb-4">{error}</p>
           <Button onClick={onRetry} variant="outline">
             Retry
@@ -209,15 +226,15 @@ export function Drawer({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        
+
         {/* Status Filter Badge */}
         {statusFilter && (
           <div className="mt-4 flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Filtered by:</span>
             <Badge variant="secondary" className="flex items-center gap-2">
               {getStatusLabel(statusFilter)}
-              <X 
-                className="h-3 w-3 cursor-pointer hover:text-destructive" 
+              <X
+                className="h-3 w-3 cursor-pointer hover:text-destructive"
                 onClick={handleClearFilter}
               />
             </Badge>
@@ -227,7 +244,10 @@ export function Drawer({
 
       {/* Table Card */}
       <Card className="border-0 shadow-sm bg-white dark:bg-neutral-800 mb-6">
-        <CandidatesTable candidates={sortedCandidates} onCandidateClick={handleCandidateClick} />
+        <CandidatesTable
+          candidates={sortedCandidates}
+          onCandidateClick={handleCandidateClick}
+        />
       </Card>
 
       {/* Pagination */}

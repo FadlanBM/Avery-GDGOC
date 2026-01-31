@@ -31,7 +31,7 @@ export default async function JobDetailPage({
 
   return (
     <div className="min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
-      <DashboardSidebar user={user} isGuest={false} />
+      <DashboardSidebar isGuest={false} />
       <MobileNavbar user={user} title="Job Details" />
       <MainContent>
         <DashboardHeader user={user} className="hidden lg:flex" />

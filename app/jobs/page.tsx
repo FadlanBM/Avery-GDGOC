@@ -6,6 +6,7 @@ import GuestHeader from "@/components/guest-header";
 import { MainContent } from "@/components/main-content";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { validateUserRole } from "@/lib/validations/auth-check";
 
 export default async function JobsPage() {
   const supabase = await createClient();
@@ -15,21 +16,21 @@ export default async function JobsPage() {
 
   // If user is authenticated, check their role
   if (user) {
-    const { data: userRole } = await supabase
-      .from("user_roles")
-      .select("roles(name)")
-      .eq("user_id", user.id)
-      .single();
+    const roleValidation = await validateUserRole(
+      supabase,
+      user.id,
+      "registrant",
+    );
 
     // If user is not a candidate, redirect to dashboard
-    if (userRole?.roles?.name !== "registrant") {
+    if (!roleValidation.isValid) {
       redirect("/dashboard");
     }
 
     // Authenticated candidate view
     return (
       <div className="min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
-        <DashboardSidebar user={user} isGuest={false} />
+        <DashboardSidebar isGuest={false} />
         <MobileNavbar user={user} title="Find Jobs" />
         <MainContent>
           <DashboardHeader user={user} className="hidden lg:flex" />

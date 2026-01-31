@@ -11,7 +11,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import axios from "axios";
 import { toast } from "sonner";
 
 interface CandidateCV {
@@ -67,46 +67,52 @@ export function CandidateDetailDrawer({
   const [isDownloading, setIsDownloading] = useState(false);
   const [isAnalyzed, setIsAnalyzed] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [aiAnalysisData, setAiAnalysisData] = useState<AIAnalysisData | null>(null);
+  const [aiAnalysisData, setAiAnalysisData] = useState<AIAnalysisData | null>(
+    null,
+  );
   const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const [candidateJobMatchId, setCandidateJobMatchId] = useState<string | null>(null);
-  const [isLoadingExistingAnalysis, setIsLoadingExistingAnalysis] = useState(false);
-  const [applicationStatus, setApplicationStatus] = useState<string>('applied');
+  const [candidateJobMatchId, setCandidateJobMatchId] = useState<string | null>(
+    null,
+  );
+  const [isLoadingExistingAnalysis, setIsLoadingExistingAnalysis] =
+    useState(false);
+  const [applicationStatus, setApplicationStatus] = useState<string>("applied");
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-
 
   useEffect(() => {
     if (isOpen && candidate?.user_id) {
       fetchCandidateCV(candidate.user_id);
-      
+
       // Only process analysis when candidate changes (not on every render)
       const candidateId = candidate.id;
       const currentAiMatch = candidate.ai_match;
-      
+
       // If this is a different candidate or we don't have analysis data yet
       if (candidateJobMatchId !== candidateId) {
-        
         // Reset states for new candidate
         setIsAnalyzing(false);
         setAnalysisError(null);
         setIsLoadingExistingAnalysis(false);
         setCandidateJobMatchId(candidateId);
-        
+
         // Check if candidate already has AI analysis score
         if (currentAiMatch && currentAiMatch > 0) {
-          
           // First try to get candidate_job_match_id from candidate data
           let matchId = candidate.candidate_job_match_id;
-          
+
           // If not in candidate data, try sessionStorage
           if (!matchId) {
-            matchId = sessionStorage.getItem(`analysis_match_id_${candidateId}`);
+            matchId = sessionStorage.getItem(
+              `analysis_match_id_${candidateId}`,
+            );
           }
-          
+
           if (matchId) {
             fetchExistingAnalysis(matchId);
           } else {
-            console.log('No candidate_job_match_id found, user needs to re-analyze');
+            console.log(
+              "No candidate_job_match_id found, user needs to re-analyze",
+            );
           }
         } else {
           // No existing analysis, reset to initial state
@@ -124,7 +130,14 @@ export function CandidateDetailDrawer({
       setCandidateJobMatchId(null);
       setIsLoadingExistingAnalysis(false);
     }
-  }, [isOpen, candidate?.id, candidate?.user_id]);
+  }, [
+    isOpen,
+    candidate?.id,
+    candidate?.user_id,
+    candidate?.ai_match,
+    candidate?.candidate_job_match_id,
+    candidateJobMatchId,
+  ]);
 
   // Initialize application status when candidate changes
   useEffect(() => {
@@ -136,31 +149,29 @@ export function CandidateDetailDrawer({
   const fetchExistingAnalysis = async (matchId: string) => {
     setIsLoadingExistingAnalysis(true);
     try {
-      
       // Use the working endpoint as primary
       const response = await fetch(`/api/ai/summary/${matchId}`, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
-      
+
       if (response.ok) {
         const result = await response.json();
-        
+
         if (result.status && result.data) {
           setAiAnalysisData(result.data);
           setIsAnalyzed(true);
           return;
         }
       } else if (response.status === 404) {
-        console.log('No analysis found in database for match ID:', matchId);
+        console.log("No analysis found in database for match ID:", matchId);
       } else {
-        console.log('Database fetch failed with status:', response.status);
+        console.log("Database fetch failed with status:", response.status);
       }
-      
     } catch (error) {
-      console.error('Error fetching analysis from database:', error);
+      console.error("Error fetching analysis from database:", error);
     } finally {
       setIsLoadingExistingAnalysis(false);
     }
@@ -216,77 +227,87 @@ export function CandidateDetailDrawer({
 
     setIsAnalyzing(true);
     setAnalysisError(null);
-    
+
     try {
-      
       // Call AI analysis API - try multiple possible paths
       let apiUrl = `/api/ai/summary?job_application=${candidate.id}&asset_id=${candidate.asset_id || cvData.id}`;
-      
+
       const response = await fetch(apiUrl, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
-      
+
       // If 405, try alternative path
       if (response.status === 405) {
-        console.log('405 error, trying alternative path...');
+        console.log("405 error, trying alternative path...");
         apiUrl = `/api/recruiter/ai/summary?job_application=${candidate.id}&asset_id=${candidate.asset_id || cvData.id}`;
-        
+
         const altResponse = await fetch(apiUrl, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         });
-        
-        
+
         if (altResponse.ok) {
           const result = await altResponse.json();
-          
+
           if (!result.status) {
-            throw new Error(result.message || 'Gagal melakukan analisis AI');
+            throw new Error(result.message || "Gagal melakukan analisis AI");
           }
-          
+
           // Save the candidate_job_match_id for future use
           if (result.data?.candidate_job_match_id || result.data?.id) {
-            const matchId = result.data.candidate_job_match_id || result.data.id;
+            const matchId =
+              result.data.candidate_job_match_id || result.data.id;
             setCandidateJobMatchId(matchId);
-            
+
             // Save to sessionStorage to persist across re-renders
-            sessionStorage.setItem(`analysis_match_id_${candidate.id}`, matchId);
+            sessionStorage.setItem(
+              `analysis_match_id_${candidate.id}`,
+              matchId,
+            );
           }
-          
+
           setAiAnalysisData(result.data);
           setIsAnalyzed(true);
           return;
         }
       }
-      
-      
+
       const result = await response.json();
-      console.log('API Response:', result);
-      
+      console.log("API Response:", result);
+
       if (!response.ok || !result.status) {
-        throw new Error(result.message || 'Gagal melakukan analisis AI');
+        throw new Error(result.message || "Gagal melakukan analisis AI");
       }
-      
+
       // Save the candidate_job_match_id for future use
-      if (result.data?.candidate_job_match_id || result.data?.id || candidate.id) {
-        const matchId = result.data?.candidate_job_match_id || result.data?.id || candidate.id;
+      if (
+        result.data?.candidate_job_match_id ||
+        result.data?.id ||
+        candidate.id
+      ) {
+        const matchId =
+          result.data?.candidate_job_match_id ||
+          result.data?.id ||
+          candidate.id;
         setCandidateJobMatchId(matchId);
-        
+
         // Save to sessionStorage to persist across re-renders
         sessionStorage.setItem(`analysis_match_id_${candidate.id}`, matchId);
       }
-    
+
       setAiAnalysisData(result.data);
       setIsAnalyzed(true);
-      
-    } catch (error: any) {
-      console.error('AI Analysis error:', error);
-      setAnalysisError(error.message || 'Terjadi kesalahan saat analisis AI');
+    } catch (error) {
+      console.error("AI Analysis error:", error);
+      setAnalysisError(
+        (axios.isAxiosError(error) && error.response?.data?.message) ||
+          "Failed to load analysis",
+      );
     } finally {
       setIsAnalyzing(false);
     }
@@ -295,82 +316,130 @@ export function CandidateDetailDrawer({
   // Get available status options based on current status
   const getAvailableStatusOptions = () => {
     switch (applicationStatus) {
-      case 'applied':
+      case "applied":
         return [
-          { value: 'applied', label: 'Applied', color: 'bg-blue-100 text-blue-700' },
-          { value: 'interview', label: 'Interview', color: 'bg-orange-100 text-orange-700' },
-          { value: 'rejected', label: 'Rejected', color: 'bg-red-100 text-red-700' },
+          {
+            value: "applied",
+            label: "Applied",
+            color: "bg-blue-100 text-blue-700",
+          },
+          {
+            value: "interview",
+            label: "Interview",
+            color: "bg-orange-100 text-orange-700",
+          },
+          {
+            value: "rejected",
+            label: "Rejected",
+            color: "bg-red-100 text-red-700",
+          },
         ];
-      case 'interview':
+      case "interview":
         return [
-          { value: 'interview', label: 'Interview', color: 'bg-orange-100 text-orange-700' },
-          { value: 'hired', label: 'Hired', color: 'bg-green-100 text-green-700' },
-          { value: 'rejected', label: 'Rejected', color: 'bg-red-100 text-red-700' },
+          {
+            value: "interview",
+            label: "Interview",
+            color: "bg-orange-100 text-orange-700",
+          },
+          {
+            value: "hired",
+            label: "Hired",
+            color: "bg-green-100 text-green-700",
+          },
+          {
+            value: "rejected",
+            label: "Rejected",
+            color: "bg-red-100 text-red-700",
+          },
         ];
-      case 'hired':
+      case "hired":
         return [
-          { value: 'hired', label: 'Hired', color: 'bg-green-100 text-green-700' },
+          {
+            value: "hired",
+            label: "Hired",
+            color: "bg-green-100 text-green-700",
+          },
         ];
-      case 'rejected':
+      case "rejected":
         return [
-          { value: 'rejected', label: 'Rejected', color: 'bg-red-100 text-red-700' },
+          {
+            value: "rejected",
+            label: "Rejected",
+            color: "bg-red-100 text-red-700",
+          },
         ];
       default:
         return [
-          { value: 'applied', label: 'Applied', color: 'bg-blue-100 text-blue-700' },
-          { value: 'interview', label: 'Interview', color: 'bg-orange-100 text-orange-700' },
-          { value: 'hired', label: 'Hired', color: 'bg-green-100 text-green-700' },
-          { value: 'rejected', label: 'Rejected', color: 'bg-red-100 text-red-700' },
+          {
+            value: "applied",
+            label: "Applied",
+            color: "bg-blue-100 text-blue-700",
+          },
+          {
+            value: "interview",
+            label: "Interview",
+            color: "bg-orange-100 text-orange-700",
+          },
+          {
+            value: "hired",
+            label: "Hired",
+            color: "bg-green-100 text-green-700",
+          },
+          {
+            value: "rejected",
+            label: "Rejected",
+            color: "bg-red-100 text-red-700",
+          },
         ];
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'applied':
-        return 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300';
-      case 'interview':
-        return 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300';
-      case 'hired':
-        return 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300';
-      case 'rejected':
-        return 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300';
+      case "applied":
+        return "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300";
+      case "interview":
+        return "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300";
+      case "hired":
+        return "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300";
+      case "rejected":
+        return "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
       default:
-        return 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300';
+        return "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300";
     }
   };
 
   const handleStatusChange = async (newStatus: string) => {
     if (!candidate?.id || newStatus === applicationStatus) return;
-    
+
     setIsUpdatingStatus(true);
     try {
       const response = await fetch(`/api/job/job-application/${candidate.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
-      
+
       const result = await response.json();
-      
+
       if (response.ok && result.status) {
         setApplicationStatus(newStatus);
         // Notify parent component about the status change
         if (onStatusChange && candidate?.id) {
           onStatusChange(candidate.id, newStatus);
         }
-        toast.success('Status berhasil diubah', {
+        toast.success("Status berhasil diubah", {
           description: `Status lamaran diubah menjadi ${newStatus}`,
         });
       } else {
-        toast.error('Gagal mengubah status', {
-          description: result.message || 'Terjadi kesalahan',
+        toast.error("Gagal mengubah status", {
+          description: result.message || "Terjadi kesalahan",
         });
       }
     } catch (error) {
-      console.error('Error updating status:', error);
-      toast.error('Gagal mengubah status', {
-        description: 'Terjadi kesalahan saat menghubungi server',
+      console.error("Error updating status:", error);
+      toast.error("Gagal mengubah status", {
+        description: "Terjadi kesalahan saat menghubungi server",
       });
     } finally {
       setIsUpdatingStatus(false);
@@ -390,7 +459,12 @@ export function CandidateDetailDrawer({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-[#265BFF] flex items-center justify-center text-white text-sm lg:text-base font-medium">
-                {candidate.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                {candidate.name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .toUpperCase()
+                  .slice(0, 2)}
               </div>
               <div>
                 <h2 className="text-lg lg:text-xl font-semibold text-neutral-900 dark:text-neutral-50">
@@ -410,16 +484,24 @@ export function CandidateDetailDrawer({
               <X className="h-4 w-4 lg:h-5 lg:w-5" />
             </Button>
           </div>
-          
+
           {/* Status Dropdown */}
           <div className="mt-4 flex items-center gap-3">
-            <span className="text-sm text-neutral-600 dark:text-neutral-400">Status:</span>
+            <span className="text-sm text-neutral-600 dark:text-neutral-400">
+              Status:
+            </span>
             <Select
               value={applicationStatus}
               onValueChange={handleStatusChange}
-              disabled={isUpdatingStatus || applicationStatus === 'hired' || applicationStatus === 'rejected'}
+              disabled={
+                isUpdatingStatus ||
+                applicationStatus === "hired" ||
+                applicationStatus === "rejected"
+              }
             >
-              <SelectTrigger className={`w-[140px] h-8 text-sm ${getStatusColor(applicationStatus)}`}>
+              <SelectTrigger
+                className={`w-[140px] h-8 text-sm ${getStatusColor(applicationStatus)}`}
+              >
                 {isUpdatingStatus ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
@@ -429,7 +511,9 @@ export function CandidateDetailDrawer({
               <SelectContent>
                 {getAvailableStatusOptions().map((option) => (
                   <SelectItem key={option.value} value={option.value}>
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${option.color}`}>
+                    <span
+                      className={`px-2 py-0.5 rounded text-xs font-medium ${option.color}`}
+                    >
                       {option.label}
                     </span>
                   </SelectItem>
@@ -525,13 +609,14 @@ export function CandidateDetailDrawer({
                     <Sparkles className="h-6 lg:h-8 w-6 lg:w-8 text-blue-600 dark:text-blue-400" />
                   </div>
                   <h3 className="text-sm lg:text-lg font-semibold text-neutral-900 dark:text-neutral-50 mb-2">
-                    {candidateJobMatchId ? 'Re-run AI Analysis' : 'AI Analysis Available'}
+                    {candidateJobMatchId
+                      ? "Re-run AI Analysis"
+                      : "AI Analysis Available"}
                   </h3>
                   <p className="text-xs lg:text-sm text-neutral-600 dark:text-neutral-400 mb-4 max-w-sm">
-                    {candidateJobMatchId 
-                      ? 'Previous analysis found. Click to run a fresh analysis with updated data:'
-                      : 'Analyze this candidate\'s CV to get AI-powered insights including:'
-                    }
+                    {candidateJobMatchId
+                      ? "Previous analysis found. Click to run a fresh analysis with updated data:"
+                      : "Analyze this candidate's CV to get AI-powered insights including:"}
                   </p>
                   <ul className="text-xs lg:text-sm text-neutral-600 dark:text-neutral-400 mb-6 space-y-1">
                     <li className="flex items-center gap-2">
@@ -554,12 +639,11 @@ export function CandidateDetailDrawer({
                     disabled={!cvData || isAnalyzing}
                   >
                     <Sparkles className="h-4 w-4" />
-                    {isAnalyzing 
-                      ? 'Analyzing...' 
-                      : candidateJobMatchId 
-                        ? 'Re-analyze with AI' 
-                        : 'Analyze with AI'
-                    }
+                    {isAnalyzing
+                      ? "Analyzing..."
+                      : candidateJobMatchId
+                        ? "Re-analyze with AI"
+                        : "Analyze with AI"}
                   </Button>
                   {analysisError && (
                     <p className="text-xs text-red-600 dark:text-red-400 mt-2 text-center">
@@ -645,7 +729,8 @@ export function CandidateDetailDrawer({
                   AI Analysis Summary
                 </h3>
                 <p className="text-xs lg:text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed">
-                  {aiAnalysisData?.explanation_text || 'Tidak ada analisis tersedia'}
+                  {aiAnalysisData?.explanation_text ||
+                    "Tidak ada analisis tersedia"}
                 </p>
               </div>
 
@@ -655,18 +740,23 @@ export function CandidateDetailDrawer({
                   Key Skills
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {aiAnalysisData?.explanation_json?.matched_skills?.length > 0 ? (
-                    aiAnalysisData.explanation_json.matched_skills.map((skill) => (
-                      <Badge
-                        key={skill}
-                        variant="secondary"
-                        className="bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300 border-0 px-2 lg:px-3 py-1 text-xs lg:text-sm"
-                      >
-                        {skill}
-                      </Badge>
-                    ))
+                  {aiAnalysisData?.explanation_json?.matched_skills?.length >
+                  0 ? (
+                    aiAnalysisData.explanation_json.matched_skills.map(
+                      (skill) => (
+                        <Badge
+                          key={skill}
+                          variant="secondary"
+                          className="bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300 border-0 px-2 lg:px-3 py-1 text-xs lg:text-sm"
+                        >
+                          {skill}
+                        </Badge>
+                      ),
+                    )
                   ) : (
-                    <p className="text-xs lg:text-sm text-neutral-500">Belum ada data keahlian tersedia</p>
+                    <p className="text-xs lg:text-sm text-neutral-500">
+                      Belum ada data keahlian tersedia
+                    </p>
                   )}
                 </div>
               </div>
@@ -681,19 +771,23 @@ export function CandidateDetailDrawer({
                   </h3>
                   <ul className="space-y-2">
                     {aiAnalysisData?.explanation_json?.pros?.length > 0 ? (
-                      aiAnalysisData.explanation_json.pros.map((item, index) => (
-                        <li
-                          key={index}
-                          className="flex items-start gap-2 text-xs lg:text-sm text-neutral-700 dark:text-neutral-300"
-                        >
-                          <span className="text-green-600 dark:text-green-400 mt-0.5">
-                            •
-                          </span>
-                          <span>{item}</span>
-                        </li>
-                      ))
+                      aiAnalysisData.explanation_json.pros.map(
+                        (item, index) => (
+                          <li
+                            key={index}
+                            className="flex items-start gap-2 text-xs lg:text-sm text-neutral-700 dark:text-neutral-300"
+                          >
+                            <span className="text-green-600 dark:text-green-400 mt-0.5">
+                              •
+                            </span>
+                            <span>{item}</span>
+                          </li>
+                        ),
+                      )
                     ) : (
-                      <li className="text-xs lg:text-sm text-neutral-500">Belum ada data tersedia</li>
+                      <li className="text-xs lg:text-sm text-neutral-500">
+                        Belum ada data tersedia
+                      </li>
                     )}
                   </ul>
                 </Card>
@@ -705,20 +799,25 @@ export function CandidateDetailDrawer({
                     Missing Requirements
                   </h3>
                   <ul className="space-y-2">
-                    {aiAnalysisData?.explanation_json?.missing_skills?.length > 0 ? (
-                      aiAnalysisData.explanation_json.missing_skills.map((item, index) => (
-                        <li
-                          key={index}
-                          className="flex items-start gap-2 text-xs lg:text-sm text-neutral-700 dark:text-neutral-300"
-                        >
-                          <span className="text-orange-600 dark:text-orange-400 mt-0.5">
-                            •
-                          </span>
-                          <span>{item}</span>
-                        </li>
-                      ))
+                    {aiAnalysisData?.explanation_json?.missing_skills?.length >
+                    0 ? (
+                      aiAnalysisData.explanation_json.missing_skills.map(
+                        (item, index) => (
+                          <li
+                            key={index}
+                            className="flex items-start gap-2 text-xs lg:text-sm text-neutral-700 dark:text-neutral-300"
+                          >
+                            <span className="text-orange-600 dark:text-orange-400 mt-0.5">
+                              •
+                            </span>
+                            <span>{item}</span>
+                          </li>
+                        ),
+                      )
                     ) : (
-                      <li className="text-xs lg:text-sm text-neutral-500">Semua requirement terpenuhi</li>
+                      <li className="text-xs lg:text-sm text-neutral-500">
+                        Semua requirement terpenuhi
+                      </li>
                     )}
                   </ul>
                 </Card>
@@ -728,8 +827,21 @@ export function CandidateDetailDrawer({
 
           {/* Schedule Interview Button */}
           <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white gap-2 py-2 lg:py-3 text-sm lg:text-base">
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" strokeWidth="2" />
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <rect
+                x="3"
+                y="4"
+                width="18"
+                height="18"
+                rx="2"
+                ry="2"
+                strokeWidth="2"
+              />
               <line x1="16" y1="2" x2="16" y2="6" strokeWidth="2" />
               <line x1="8" y1="2" x2="8" y2="6" strokeWidth="2" />
               <line x1="3" y1="10" x2="21" y2="10" strokeWidth="2" />

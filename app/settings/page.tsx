@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SettingsContainer } from "@/modules/settings";
 import DashboardSidebar from "@/components/dashboard-sidebar";
@@ -24,13 +23,13 @@ function GuestSettingsView() {
                 Silakan login untuk mengakses pengaturan akun Anda.
               </p>
               <div className="space-y-4 max-w-md mx-auto">
-                <a 
+                <a
                   href="/login"
                   className="block w-full bg-[#265BFF] hover:bg-[#1E40AF] text-white px-6 py-3 rounded-lg font-medium transition-colors"
                 >
                   Login sebagai Kandidat
                 </a>
-                <a 
+                <a
                   href="/recruiter/login"
                   className="block w-full border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-lg font-medium transition-colors"
                 >
@@ -58,7 +57,7 @@ export default async function SettingsPage() {
   // Authenticated user view
   return (
     <div className="min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
-      <DashboardSidebar user={user} isGuest={false} />
+      <DashboardSidebar isGuest={false} />
       <MobileNavbar user={user} title="Settings" />
       <MainContent>
         <DashboardHeader user={user} className="hidden lg:flex" />

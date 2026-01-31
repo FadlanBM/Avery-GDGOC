@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import axios from "axios";
 import DashboardSidebar from "@/components/dashboard-sidebar";
@@ -26,7 +26,7 @@ export default function CandidatesContainer({
   const searchParams = useSearchParams();
   const statusFilter = searchParams?.get("status") || "";
   const searchQuery = searchParams?.get("search") || "";
-  
+
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +35,7 @@ export default function CandidatesContainer({
   const [totalCandidates, setTotalCandidates] = useState(0);
   const itemsPerPage = 6;
 
-  const fetchCandidates = async () => {
+  const fetchCandidates = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -47,7 +47,7 @@ export default function CandidatesContainer({
       if (searchQuery) {
         url += `&search=${encodeURIComponent(searchQuery)}`;
       }
-      
+
       const response = await axios.get(url);
       console.log(response);
 
@@ -68,13 +68,16 @@ export default function CandidatesContainer({
       } else {
         setError(response.data.message || "Failed to load candidates");
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error fetching candidates:", err);
-      setError(err.response?.data?.message || "Failed to load candidates");
+      setError(
+        (axios.isAxiosError(err) && err.response?.data?.message) ||
+          "Failed to load candidates",
+      );
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, statusFilter, searchQuery]);
 
   useEffect(() => {
     // Reset to page 1 when search or filter changes
@@ -83,7 +86,7 @@ export default function CandidatesContainer({
 
   useEffect(() => {
     fetchCandidates();
-  }, [currentPage, statusFilter, searchQuery]);
+  }, [currentPage, statusFilter, searchQuery, fetchCandidates]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -96,7 +99,7 @@ export default function CandidatesContainer({
   return (
     <div className="flex min-h-screen bg-[#F7F8FC] dark:bg-neutral-900">
       <DashboardSidebar />
-      
+
       <MainContent>
         <DashboardHeader user={user} />
 

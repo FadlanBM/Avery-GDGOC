@@ -5,6 +5,7 @@ import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 import path from "path";
 import { pathToFileURL } from "url";
 import axios from "axios";
+import { TextItem } from "pdfjs-dist/types/src/display/api";
 
 interface NamedItem {
   name: string;
@@ -118,12 +119,9 @@ export async function POST(request: Request) {
       const page = await pdfDocument.getPage(i);
       const textContent = await page.getTextContent();
       const pageText = textContent.items
-        .filter((item: unknown): item is { str: string } =>
-          Object.prototype.hasOwnProperty.call(item, "str"),
-        )
+        .filter((item): item is TextItem => "str" in item)
         .map((item) => item.str)
         .join(" ");
-
       fullText += pageText + " ";
     }
 

@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { validateUserRole } from "../validations/auth-check";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -33,7 +34,7 @@ export async function updateSession(request: NextRequest) {
         return request.cookies.getAll();
       },
       setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) =>
+        cookiesToSet.forEach(({ name, value }) =>
           request.cookies.set(name, value),
         );
         supabaseResponse = NextResponse.next({
@@ -113,16 +114,20 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Check if user is registrant and needs to complete profile
-  if (user && !request.nextUrl.pathname.startsWith("/complete-profile") && !request.nextUrl.pathname.startsWith("/api/")) {
+  if (
+    user &&
+    !request.nextUrl.pathname.startsWith("/complete-profile") &&
+    !request.nextUrl.pathname.startsWith("/api/")
+  ) {
     try {
       // Check user role
-      const { data: userRole } = await supabase
-        .from("user_roles")
-        .select("roles(name)")
-        .eq("user_id", user.id)
-        .single();
+      const roleValidation = await validateUserRole(
+        supabase,
+        user.id,
+        "registrant",
+      );
 
-      if (userRole?.roles?.name === "registrant") {
+      if (roleValidation.isValid) {
         // Check if candidate profile exists
         const { data: candidateProfile } = await supabase
           .from("candidate")
@@ -131,10 +136,12 @@ export async function updateSession(request: NextRequest) {
           .maybeSingle();
 
         // If no profile exists, redirect to complete-profile
-        if (!candidateProfile && 
-            !request.nextUrl.pathname.startsWith("/login") &&
-            !request.nextUrl.pathname.startsWith("/register") &&
-            !request.nextUrl.pathname.startsWith("/auth/callback")) {
+        if (
+          !candidateProfile &&
+          !request.nextUrl.pathname.startsWith("/login") &&
+          !request.nextUrl.pathname.startsWith("/register") &&
+          !request.nextUrl.pathname.startsWith("/auth/callback")
+        ) {
           const url = request.nextUrl.clone();
           url.pathname = "/complete-profile";
           return NextResponse.redirect(url);
