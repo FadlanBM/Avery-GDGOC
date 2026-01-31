@@ -152,28 +152,28 @@ export async function GET(request: Request) {
                 switch (status) {
                     case "applied":
                         type = "user";
-                        description = `${candidateName} melamar untuk posisi ${jobTitle}`;
+                        description = `${candidateName} applied for ${jobTitle}`;
                         break;
                     case "screening":
                         type = "ai";
-                        description = `AI Analysis selesai untuk ${candidateName}`;
+                        description = `AI Analysis completed for ${candidateName}`;
                         aiPowered = true;
                         break;
                     case "interview":
                         type = "calendar";
-                        description = `Interview dijadwalkan dengan ${candidateName} untuk ${jobTitle}`;
+                        description = `Interview scheduled with ${candidateName} for ${jobTitle}`;
                         break;
                     case "hired":
                         type = "status";
-                        description = `${candidateName} diterima untuk posisi ${jobTitle}`;
+                        description = `${candidateName} was hired for ${jobTitle}`;
                         break;
                     case "rejected":
                         type = "status";
-                        description = `${candidateName} ditolak untuk posisi ${jobTitle}`;
+                        description = `${candidateName} was rejected for ${jobTitle}`;
                         break;
                     default:
                         type = "status";
-                        description = `${candidateName} status berubah ke ${status} untuk ${jobTitle}`;
+                        description = `${candidateName} status changed to ${status} for ${jobTitle}`;
                 }
 
                 // If has AI match, mark as AI powered

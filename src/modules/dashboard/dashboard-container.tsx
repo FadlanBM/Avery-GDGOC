@@ -55,7 +55,7 @@ export default function DashboardContainer({ user }: DashboardContainerProps) {
       }
     } catch (err) {
       console.error("Dashboard fetch error:", err);
-      setError("Gagal memuat data dashboard");
+      setError("Failed to load dashboard data");
     } finally {
       setIsLoading(false);
     }
@@ -77,7 +77,7 @@ export default function DashboardContainer({ user }: DashboardContainerProps) {
           onClick={() => fetchDashboardData(currentPage)}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
-          Coba Lagi
+          Retry
         </button>
       </div>
     );

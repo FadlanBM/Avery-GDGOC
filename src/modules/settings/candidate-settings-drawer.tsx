@@ -21,7 +21,7 @@ export function CandidateSettingsDrawer() {
   ];
 
   return (
-    <main className="flex-1 p-4 lg:p-8 mt-16">
+    <main className="flex-1 p-2 lg:p-0">
       <div className="w-full max-w-6xl mx-auto">
         <div className="mb-6 lg:mb-8">
           <h1 className="text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-neutral-50 mb-2">

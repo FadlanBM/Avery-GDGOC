@@ -42,7 +42,7 @@ export function Drawer({
 
       <Card>
         <CardHeader>
-          <CardTitle>Aktivitas Terbaru</CardTitle>
+          <CardTitle>Recent Activity</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -53,7 +53,7 @@ export function Drawer({
                 <ActivityList activities={activities} />
               ) : (
                 <div className="py-8 text-center text-neutral-500 dark:text-neutral-400">
-                  Belum ada aktivitas
+                  No activities yet
                 </div>
               )}
             </>
