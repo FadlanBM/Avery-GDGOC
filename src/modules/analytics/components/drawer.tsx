@@ -17,7 +17,8 @@ export function Drawer() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedPreset, setSelectedPreset] = useState<DateRangePreset>("30days");
+  const [selectedPreset, setSelectedPreset] =
+    useState<DateRangePreset>("30days");
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -32,7 +33,8 @@ export function Drawer() {
       if (endDate) params.append("endDate", endDate);
 
       const response = await axios.get(`/api/analytics?${params.toString()}`);
-      
+      console.log(response);
+
       if (response.data.status) {
         setData(response.data.data);
         setLastUpdated(new Date());
@@ -91,7 +93,7 @@ export function Drawer() {
 
   const handlePresetChange = (preset: DateRangePreset) => {
     setSelectedPreset(preset);
-    
+
     if (preset !== "custom") {
       const { startDate, endDate } = calculateDateRange(preset);
       fetchAnalytics(startDate, endDate);
@@ -123,7 +125,12 @@ export function Drawer() {
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
           <p className="font-semibold">Error loading analytics</p>
           <p className="text-sm">{error}</p>
-          <Button onClick={handleRefresh} className="mt-4" variant="outline" size="sm">
+          <Button
+            onClick={handleRefresh}
+            className="mt-4"
+            variant="outline"
+            size="sm"
+          >
             Try Again
           </Button>
         </div>
@@ -144,13 +151,13 @@ export function Drawer() {
             </p>
           )}
         </div>
-        
+
         <div className="flex gap-2">
           <Button onClick={handleRefresh} variant="outline" size="default">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
-          
+
           {/* {data && !data.isEmpty && (
             <ExportPDFButton
               dateRange={{
@@ -183,11 +190,17 @@ export function Drawer() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
             <div data-export="funnel">
-              <HiringFunnelChart data={data?.hiringFunnel!} isLoading={isLoading} />
+              <HiringFunnelChart
+                data={data?.hiringFunnel!}
+                isLoading={isLoading}
+              />
             </div>
-            
+
             <div data-export="trends">
-              <ApplicationTrendChart data={data?.applicationTrends!} isLoading={isLoading} />
+              <ApplicationTrendChart
+                data={data?.applicationTrends!}
+                isLoading={isLoading}
+              />
             </div>
           </div>
 
