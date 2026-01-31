@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Drawer } from "./components/drawer";
+import { DashboardMetrics, Activity } from "./types";
 
 interface DashboardContainerProps {
   user: {
@@ -14,135 +15,82 @@ interface DashboardContainerProps {
   };
 }
 
-// Mock activities data
-const allActivities = [
-  {
-    id: 1,
-    type: "user" as const,
-    description: "Alex Thompson applied for Senior React Developer",
-    timestamp: new Date(Date.now() - 10 * 60 * 1000),
-    aiPowered: false,
-  },
-  {
-    id: 2,
-    type: "ai" as const,
-    description: "AI Analysis complete for Candidate #402 - Sarah Jenkin",
-    timestamp: new Date(Date.now() - 25 * 60 * 1000),
-    aiPowered: true,
-  },
-  {
-    id: 3,
-    type: "calendar" as const,
-    description: "Interview scheduled with Marcus Chen for tomorrow at 2 PM",
-    timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000),
-    aiPowered: false,
-  },
-  {
-    id: 4,
-    type: "status" as const,
-    description: "Emily Rodriguez moved to Interview stage",
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    aiPowered: false,
-  },
-  {
-    id: 5,
-    type: "user" as const,
-    description: "3 new applications received for Product Manager role",
-    timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000),
-    aiPowered: false,
-  },
-  {
-    id: 6,
-    type: "ai" as const,
-    description: "AI screening completed for 12 Backend Engineer candidates",
-    timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
-    aiPowered: true,
-  },
-  {
-    id: 7,
-    type: "calendar" as const,
-    description: "Interview with Jessica Wu completed - Feedback submitted",
-    timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000),
-    aiPowered: false,
-  },
-  {
-    id: 8,
-    type: "user" as const,
-    description: "Michael Brown applied for UX Designer position",
-    timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000),
-    aiPowered: false,
-  },
-  {
-    id: 9,
-    type: "status" as const,
-    description: "David Kim moved to Final Interview stage",
-    timestamp: new Date(Date.now() - 10 * 60 * 60 * 1000),
-    aiPowered: false,
-  },
-  {
-    id: 10,
-    type: "ai" as const,
-    description: "AI recommended 5 top candidates for Data Scientist role",
-    timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000),
-    aiPowered: true,
-  },
-  {
-    id: 11,
-    type: "calendar" as const,
-    description: "Interview scheduled with Amanda Lee for next Monday at 10 AM",
-    timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-    aiPowered: false,
-  },
-  {
-    id: 12,
-    type: "user" as const,
-    description: "Robert Wilson applied for DevOps Engineer",
-    timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000 - 2 * 60 * 60 * 1000),
-    aiPowered: false,
-  },
-  {
-    id: 13,
-    type: "status" as const,
-    description: "Lisa Anderson received job offer - Accepted",
-    timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    aiPowered: false,
-  },
-  {
-    id: 14,
-    type: "ai" as const,
-    description: "AI Analysis identified skill gaps in candidate pool",
-    timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 - 5 * 60 * 60 * 1000),
-    aiPowered: true,
-  },
-  {
-    id: 15,
-    type: "user" as const,
-    description: "7 new applications received for Frontend Developer role",
-    timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-    aiPowered: false,
-  },
-];
-
 export default function DashboardContainer({ user }: DashboardContainerProps) {
+  const [metrics, setMetrics] = useState<DashboardMetrics | undefined>();
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [totalActivities, setTotalActivities] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
   const itemsPerPage = 7;
-  
-  // Calculate pagination
-  const totalPages = Math.ceil(allActivities.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentActivities = allActivities.slice(startIndex, endIndex);
-  
+  const totalPages = Math.ceil(totalActivities / itemsPerPage);
+
+  const fetchDashboardData = useCallback(async (page: number) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(
+        `/api/dashboard?page=${page}&limit=${itemsPerPage}`
+      );
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch dashboard data");
+      }
+      
+      const result = await response.json();
+      
+      if (result.status) {
+        setMetrics(result.data.metrics);
+        // Convert timestamp strings back to Date objects
+        const activitiesWithDates = result.data.activities.map((activity: Activity & { timestamp: string }) => ({
+          ...activity,
+          timestamp: new Date(activity.timestamp),
+        }));
+        setActivities(activitiesWithDates);
+        setTotalActivities(result.data.totalActivities);
+      } else {
+        setError(result.message || "Failed to load dashboard data");
+      }
+    } catch (err) {
+      console.error("Dashboard fetch error:", err);
+      setError("Gagal memuat data dashboard");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDashboardData(currentPage);
+  }, [currentPage, fetchDashboardData]);
+
   const goToPage = (page: number) => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
 
+  if (error && !isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <p className="text-red-500 mb-4">{error}</p>
+        <button
+          onClick={() => fetchDashboardData(currentPage)}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Coba Lagi
+        </button>
+      </div>
+    );
+  }
+
   return (
     <Drawer
       user={user}
-      currentActivities={currentActivities}
+      metrics={metrics}
+      activities={activities}
       currentPage={currentPage}
       totalPages={totalPages}
+      isLoading={isLoading}
       onPageChange={goToPage}
     />
   );

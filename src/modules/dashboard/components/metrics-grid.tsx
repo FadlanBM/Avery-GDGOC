@@ -1,40 +1,63 @@
 import { MetricCard } from "@/components/metric-card";
 import { Users, Calendar, Briefcase, Clock } from "lucide-react";
+import { MetricsGridSkeleton } from "./metrics-skeleton";
+import { DashboardMetrics } from "../types";
 
-export function MetricsGrid() {
+interface MetricsGridProps {
+  metrics?: DashboardMetrics;
+  isLoading?: boolean;
+}
+
+export function MetricsGrid({ metrics, isLoading }: MetricsGridProps) {
+  if (isLoading || !metrics) {
+    return <MetricsGridSkeleton />;
+  }
+
   return (
     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6 lg:mb-8">
       <MetricCard
         icon={Users}
         iconColor="text-blue-500"
         iconBgColor="bg-blue-50 dark:bg-blue-950"
-        label="Total Applicants"
-        value="1,240"
-        trend={{ direction: "up", value: "+12% vs last month" }}
+        label="Total Pelamar"
+        value={metrics.totalApplicants.toLocaleString()}
+        trend={{
+          direction: metrics.applicantsTrend >= 0 ? "up" : "down",
+          value: `${metrics.applicantsTrend >= 0 ? "+" : ""}${metrics.applicantsTrend}% vs bulan lalu`,
+        }}
       />
       <MetricCard
         icon={Calendar}
         iconColor="text-green-500"
         iconBgColor="bg-green-50 dark:bg-green-950"
-        label="Interviews Scheduled"
-        value="28"
-        trend={{ direction: "up", value: "+8 this week" }}
+        label="Interview Dijadwalkan"
+        value={metrics.interviewsScheduled.toString()}
+        trend={{
+          direction: metrics.interviewsTrend >= 0 ? "up" : "down",
+          value: `${metrics.interviewsTrend >= 0 ? "+" : ""}${metrics.interviewsTrend} minggu ini`,
+        }}
       />
       <MetricCard
         icon={Briefcase}
         iconColor="text-orange-500"
         iconBgColor="bg-orange-50 dark:bg-orange-950"
-        label="Open Jobs"
-        value="6"
-        trend={{ direction: "up", value: "+2 new this month" }}
+        label="Lowongan Aktif"
+        value={metrics.openJobs.toString()}
+        trend={{
+          direction: metrics.jobsTrend >= 0 ? "up" : "down",
+          value: `${metrics.jobsTrend >= 0 ? "+" : ""}${metrics.jobsTrend} baru bulan ini`,
+        }}
       />
       <MetricCard
         icon={Clock}
         iconColor="text-purple-500"
         iconBgColor="bg-purple-50 dark:bg-purple-950"
-        label="Avg. Time to Hire"
-        value="18 days"
-        trend={{ direction: "down", value: "-3 days vs last quarter" }}
+        label="Rata-rata Waktu Hiring"
+        value={`${metrics.avgTimeToHire} hari`}
+        trend={{
+          direction: metrics.timeToHireTrend <= 0 ? "down" : "up",
+          value: `${metrics.timeToHireTrend} hari vs kuartal lalu`,
+        }}
       />
     </div>
   );

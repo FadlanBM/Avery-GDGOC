@@ -1,16 +1,10 @@
 import { ActivityItem } from "@/components/activity-item";
-
-interface Activity {
-  id: number;
-  type: "user" | "ai" | "calendar" | "status";
-  description: string;
-  timestamp: Date;
-  aiPowered: boolean;
-}
+import { Activity } from "../types";
 
 interface ActivityListProps {
   activities: Activity[];
 }
+
 
 export function ActivityList({ activities }: ActivityListProps) {
   return (
