@@ -25,7 +25,7 @@ export default async function JobDetailPage({
     const roleValidation = await validateUserRole(
       supabase,
       user.id,
-      "recruiter",
+      "registrant",
     );
     // If user is a candidate (registrant), redirect to jobs page
     if (!roleValidation.isValid) {

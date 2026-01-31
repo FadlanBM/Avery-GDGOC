@@ -233,7 +233,7 @@ export function CandidateDetailDrawer({
       let apiUrl = `/api/ai/summary?job_application=${candidate.id}&asset_id=${candidate.asset_id || cvData.id}`;
 
       const response = await fetch(apiUrl, {
-        method: "POST",
+        method: "GET",
         headers: {
           "Content-Type": "application/json",
         },
@@ -722,6 +722,26 @@ export function CandidateDetailDrawer({
           {/* AI Analysis Details - Only show when analyzed */}
           {isAnalyzed && aiAnalysisData && (
             <>
+              {/* Match Details Grid */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <Card className="p-3 bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800">
+                  <div className="text-xs text-neutral-600 dark:text-neutral-400 mb-1">
+                    Skill Match
+                  </div>
+                  <div className="text-lg font-semibold text-blue-700 dark:text-blue-300">
+                    {aiAnalysisData?.skill_match || 0}%
+                  </div>
+                </Card>
+                <Card className="p-3 bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800">
+                  <div className="text-xs text-neutral-600 dark:text-neutral-400 mb-1">
+                    Experience
+                  </div>
+                  <div className="text-lg font-semibold text-purple-700 dark:text-purple-300">
+                    {aiAnalysisData?.experience_score || 0}%
+                  </div>
+                </Card>
+              </div>
+
               {/* AI Analysis Summary */}
               <div>
                 <h3 className="text-sm lg:text-base font-semibold text-neutral-900 dark:text-neutral-50 flex items-center gap-2 mb-3">
@@ -787,6 +807,35 @@ export function CandidateDetailDrawer({
                     ) : (
                       <li className="text-xs lg:text-sm text-neutral-500">
                         Belum ada data tersedia
+                      </li>
+                    )}
+                  </ul>
+                </Card>
+
+                {/* Cons / Kekurangan */}
+                <Card className="p-4 bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700">
+                  <h3 className="text-sm lg:text-base font-semibold text-red-600 dark:text-red-400 flex items-center gap-2 mb-3">
+                    <AlertCircle className="h-4 lg:h-5 w-4 lg:w-5" />
+                    Areas for Improvement
+                  </h3>
+                  <ul className="space-y-2">
+                    {aiAnalysisData?.explanation_json?.cons?.length > 0 ? (
+                      aiAnalysisData.explanation_json.cons.map(
+                        (item, index) => (
+                          <li
+                            key={index}
+                            className="flex items-start gap-2 text-xs lg:text-sm text-neutral-700 dark:text-neutral-300"
+                          >
+                            <span className="text-red-600 dark:text-red-400 mt-0.5">
+                              •
+                            </span>
+                            <span>{item}</span>
+                          </li>
+                        ),
+                      )
+                    ) : (
+                      <li className="text-xs lg:text-sm text-neutral-500">
+                        Tidak ada catatan khusus
                       </li>
                     )}
                   </ul>

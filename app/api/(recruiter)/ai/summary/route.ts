@@ -1,12 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { validateUserRole } from "@/lib/validations/auth-check";
 import { NextResponse } from "next/server";
-import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
-import path from "path";
-import { pathToFileURL } from "url";
+// @ts-ignore
+import pdf from "pdf-parse/lib/pdf-parse.js";
 import axios from "axios";
-import { TextItem } from "pdfjs-dist/types/src/display/api";
-
 interface NamedItem {
   name: string;
 }
@@ -30,7 +27,16 @@ function getName(item: NamedItem | NamedItem[] | null | undefined): string {
   return item.name || "-";
 }
 
-export async function POST(request: Request) {
+const allowedOrigin = "https://myapp-frontend.vercel.app";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": allowedOrigin,
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Credentials": "true",
+};
+
+export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const jobId = searchParams.get("job_application");
@@ -50,7 +56,7 @@ export async function POST(request: Request) {
           message: "Unauthorized: Silakan login terlebih dahulu",
           error: { auth: [authError?.message || "User not found"] },
         },
-        { status: 401 },
+        { status: 401, headers: corsHeaders },
       );
     }
 
@@ -60,8 +66,12 @@ export async function POST(request: Request) {
       user.id,
       "recruiter",
     );
-    if (!roleValidation.isValid) {
-      return roleValidation.response;
+    if (!roleValidation.isValid && roleValidation.response) {
+      const body = await roleValidation.response.json();
+      return NextResponse.json(body, {
+        status: roleValidation.response.status,
+        headers: corsHeaders,
+      });
     }
 
     // 3. Get Asset Info
@@ -79,7 +89,7 @@ export async function POST(request: Request) {
           message: "File tidak ditemukan",
           error: { database: ["Asset not found"] },
         },
-        { status: 404 },
+        { status: 404, headers: corsHeaders },
       );
     }
 
@@ -96,36 +106,36 @@ export async function POST(request: Request) {
           message: "Gagal mengunduh file",
           error: { storage: [downloadError?.message || "Download failed"] },
         },
-        { status: 500 },
+        { status: 500, headers: corsHeaders },
       );
     }
     const arrayBuffer = await fileData.arrayBuffer();
-    const workerPath = path.resolve(
-      process.cwd(),
-      "node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
-    );
-    pdfjsLib.GlobalWorkerOptions.workerSrc = pathToFileURL(workerPath).href;
-    const loadingTask = pdfjsLib.getDocument({
-      data: new Uint8Array(arrayBuffer),
-      useSystemFonts: true,
-    });
+    const buffer = Buffer.from(arrayBuffer);
 
-    const pdfDocument = await loadingTask.promise;
-    const numPages = pdfDocument.numPages;
     let fullText = "";
-
-    // Extract text from each page
-    for (let i = 1; i <= numPages; i++) {
-      const page = await pdfDocument.getPage(i);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items
-        .filter((item): item is TextItem => "str" in item)
-        .map((item) => item.str)
-        .join(" ");
-      fullText += pageText + " ";
+    try {
+      const data = await pdf(buffer);
+      fullText = data.text;
+    } catch (parseError) {
+      console.error("PDF Parse Error:", parseError);
+      return NextResponse.json(
+        {
+          status: false,
+          message: "Gagal memproses file PDF",
+          error: {
+            parsing: [
+              parseError instanceof Error
+                ? parseError.message
+                : "PDF parsing failed",
+            ],
+          },
+        },
+        { status: 500, headers: corsHeaders },
+      );
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
+    const url_gemini = process.env.GEMINI_API_URL;
 
     if (!apiKey) {
       return NextResponse.json(
@@ -134,7 +144,7 @@ export async function POST(request: Request) {
           message: "API Key Gemini tidak ditemukan",
           error: { server: ["GEMINI_API_KEY missing"] },
         },
-        { status: 500 },
+        { status: 500, headers: corsHeaders },
       );
     }
 
@@ -183,7 +193,7 @@ export async function POST(request: Request) {
           message: "Data lamaran tidak ditemukan",
           error: { database: [fetchError?.message || "Record not found"] },
         },
-        { status: 404 },
+        { status: 404, headers: corsHeaders },
       );
     }
 
@@ -201,7 +211,7 @@ export async function POST(request: Request) {
             message: "Data pekerjaan tidak ditemukan dalam lamaran",
             error: { database: ["Job not found in application"] },
           },
-          { status: 404 },
+          { status: 404, headers: corsHeaders },
         );
       }
 
@@ -268,10 +278,8 @@ export async function POST(request: Request) {
       `;
     }
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-
     const aiResponse = await axios.post(
-      geminiUrl,
+      url_gemini || "",
       {
         contents: [
           {
@@ -280,7 +288,10 @@ export async function POST(request: Request) {
         ],
       },
       {
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey,
+        },
       },
     );
 
@@ -351,15 +362,18 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({
-      status: true,
-      message: "Analisis kecocokan berhasil dibuat",
-      data: {
-        ...matchResult,
-        id: candidateJobMatchId,
-        candidate_job_match_id: candidateJobMatchId,
+    return NextResponse.json(
+      {
+        status: true,
+        message: "Analisis kecocokan berhasil dibuat",
+        data: {
+          ...matchResult,
+          id: candidateJobMatchId,
+          candidate_job_match_id: candidateJobMatchId,
+        },
       },
-    });
+      { status: 200, headers: corsHeaders },
+    );
   } catch (error) {
     console.error("Get CV file error:", error);
     const errorMessage =
@@ -370,7 +384,11 @@ export async function POST(request: Request) {
         message: "Terjadi kesalahan internal server",
         error: { server: [errorMessage] },
       },
-      { status: 500 },
+      { status: 500, headers: corsHeaders },
     );
   }
+}
+
+export async function OPTIONS() {
+  return NextResponse.json({}, { status: 200, headers: corsHeaders });
 }
