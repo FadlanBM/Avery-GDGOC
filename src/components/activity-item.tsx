@@ -69,11 +69,6 @@ export function ActivityItem({
           {timeAgo}
         </p>
       </div>
-      {aiPowered && (
-        <Badge variant="blue" className="shrink-0 text-xs px-2 py-1">
-          AI
-        </Badge>
-      )}
     </div>
   );
 }

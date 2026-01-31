@@ -45,7 +45,7 @@ export function OnboardingEmptyState() {
                 variant="outline"
                 onClick={() => router.push("/job-openings")}
               >
-                Lihat Lowongan
+                Browse job openings
               </Button>
             </div>
 

@@ -22,7 +22,7 @@ export default function GuestHeader({ title = "Cari Pekerjaan" }: GuestHeaderPro
           className="hidden sm:inline-flex"
         >
           <Link href="/login">
-            Login Kandidat
+            Login for candidates
           </Link>
         </Button>
         
@@ -32,7 +32,7 @@ export default function GuestHeader({ title = "Cari Pekerjaan" }: GuestHeaderPro
           className="hidden sm:inline-flex"
         >
           <Link href="/recruiter/login">
-            Login Perusahaan
+            Login for recruiters
           </Link>
         </Button>
 

@@ -179,7 +179,7 @@ export function CandidateJobsContainer({
           </h1>
           <p className="text-neutral-600 dark:text-neutral-400 mt-1">
             Discover your next career opportunity
-            {isGuest && " (Mode Tamu)"}
+            {isGuest}
           </p>
         </div>
       </div>
